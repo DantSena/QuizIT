@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuizIT - Platform Ujian Online</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <link rel="icon" type="image/png" href="logo.webp">
+</head>
+<body class="bg-white text-gray-800 min-h-screen flex flex-col justify-between select-none font-sans">
+
+  <!-- HEADER / NAVBAR (BIRU DONKER 35% DENGAN AKSEN PUTIH BERSIH) -->
+  <header class="bg-[#1e1b4b] text-white py-4 px-4 md:px-12 flex flex-col md:flex-row justify-between items-center gap-4 shadow-md">
+    <!-- Logo QuizIT Scholar Core -->
+    <div class="flex items-center gap-2">
+      <div class="bg-red-600 text-white font-black text-lg px-3 py-1 rounded-lg tracking-wider shadow transform -rotate-2">
+        QuizIT
+      </div>
+      <span class="text-blue-200 font-extrabold text-base tracking-tight">Scholar Core</span>
+    </div>
+
+    <!-- KELOMPOK TOMBOL / INPUT DI NAVBAR (Responsif Mobile & Desktop) -->
+    <div class="flex flex-col sm:flex-row items-center gap-2.5 w-full md:w-auto">
+      
+      <!-- Input Link Penugasan (Kotak Hitam Elegan) -->
+      <div class="flex items-center bg-gray-900 border border-gray-700 rounded-xl overflow-hidden p-1 shadow-inner w-full sm:w-auto">
+        <input type="text" id="input-link" placeholder="Tempel Link / Kode..." class="bg-transparent px-3 py-1.5 text-xs text-white focus:outline-none w-full sm:w-36">
+        <button onclick="goByLink()" class="bg-gray-800 hover:bg-gray-700 text-gray-200 px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap">Buka</button>
+      </div>
+
+      <!-- Input Kode Cepat (Kotak Abu-abu) -->
+      <div class="flex items-center bg-gray-200 border border-gray-300 rounded-xl overflow-hidden p-1 w-full sm:w-auto">
+        <input type="text" id="input-kode-Cepat" placeholder="Kode 5 Huruf" maxlength="5" class="bg-transparent px-3 py-1.5 text-xs text-gray-800 uppercase font-mono font-bold focus:outline-none w-full sm:w-28 text-center sm:text-left">
+        <button onclick="goByCode()" class="bg-gray-700 hover:bg-gray-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap">Mulai</button>
+      </div>
+
+      <!-- Tombol Admin (Merah Darah) -->
+      <button onclick="openAdminModal()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-xs font-extrabold tracking-wide transition shadow-md w-full sm:w-auto whitespace-nowrap">
+        DEV
+      </button>
+  <!-- Tombol Hubungi Dev (WhatsApp) -->
+  <a href="https://wa.me/6281234567890?text=Halo%20Dev,%20saya%20ingin%20bertanya%20tentang%20QuizIT%20Scholar%20Core" target="_blank" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl font-bold transition shadow-md flex items-center gap-1.5">
+    <span>💬 Hubungi Dev</span>
+  </a>
+</div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT (DOMINAN PUTIH 60% DENGAN SENTUHAN BIRU DONKER & ALERT ORANGE 15%) -->
+  <main class="flex-1 flex flex-col items-center justify-center px-4 md:px-8 py-12 bg-white text-center my-auto">
+    <div class="max-w-3xl space-y-6 w-full">
+      
+      <!-- Badge Peringatan / Alert Orange (15% Aksen) -->
+      <div class="inline-flex items-center gap-2 bg-orange-100 border border-orange-300 text-orange-700 px-4 py-1.5 rounded-full text-xs font-bold shadow-sm mx-auto">
+        <span>⚡ Ruang Quiz interaktif yang pas buat barengan sekelas 😎</span>
+      </div>
+
+      <!-- Judul Utama (Biru Donker) -->
+      <h1 class="text-4xl md:text-6xl font-black tracking-tight text-[#1e1b4b] leading-tight">
+        Udah Siap <span class="text-orange-500">Belum?</span>
+      </h1>
+      
+      <p class="text-gray-600 text-sm md:text-base font-medium max-w-xl mx-auto">
+        Quiz online yang asik buat seru seruan bareng sekelas, tetap adil, dan rekap nilainya langsung beres buat warga SMASA.
+      </p>
+
+      <!-- Kotak Panduan Penggunaan (Latar Putih bersih dengan Border Biru Halus) -->
+      <div class="bg-gray-50 text-gray-800 p-5 md:p-6 rounded-2xl shadow-lg border border-blue-100 mt-8 text-left space-y-4">
+        <div class="flex justify-between items-center border-b border-gray-200 pb-3">
+          <h3 class="font-bold text-[#1e1b4b] text-xs uppercase tracking-wider flex items-center gap-1.5">
+            <span>💡</span> Panduan Singkat Penggunaan
+          </h3>
+          <span class="text-[10px] bg-blue-900 text-blue-100 font-bold px-2.5 py-1 rounded-full">Sistem Terpadu</span>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-gray-600">
+          <div class="p-3.5 bg-white rounded-xl border border-gray-200 shadow-sm">
+            <strong class="text-[#1e1b4b] block mb-1 font-bold">🎮 Untuk Siswa (Arcade / Penugasan):</strong>
+            Masukkan kode 5 huruf dari guru pada kolom abu-abu di atas, atau tempel link penugasan langsung di kolom hitam untuk mulai mengerjakan.
+          </div>
+          <div class="p-3.5 bg-white rounded-xl border border-gray-200 shadow-sm">
+            <strong class="text-red-700 block mb-1 font-bold">🔒 Untuk Pengawas / Admin:</strong>
+            Klik tombol <span class="text-red-600 font-bold">DEV</span> di atas, masukkan kredensial khusus untuk membuat soal dan memantau ujian.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-gray-100 text-gray-500 py-4 text-center text-xs border-t border-gray-200">
+    &copy; 2026 QuizIT Scholar Core • Dibangun dengan semangat edukasi dan integritas.
+  </footer>
+
+  <!-- MODAL LOGIN ADMIN -->
+  <div id="admin-modal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+    <div class="bg-white p-6 rounded-2xl max-w-sm w-full border border-gray-200 text-gray-800 space-y-4 shadow-2xl">
+      <h3 class="text-lg font-bold text-red-600 flex items-center gap-2">🔐 Autentikasi Admin</h3>
+      <p class="text-xs text-gray-500">Masukkan akun resmi pengawas untuk mengakses panel kontrol.</p>
+      
+      <div class="space-y-3 pt-2">
+        <div>
+          <label class="block text-[10px] uppercase font-bold text-gray-500 mb-1">Username Admin</label>
+          <input type="text" id="adm-user" placeholder="Username..." class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-red-500">
+        </div>
+        <div>
+          <label class="block text-[10px] uppercase font-bold text-gray-500 mb-1">Password</label>
+          <input type="password" id="adm-pass" placeholder="Password..." class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-red-500">
+        </div>
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button onclick="closeAdminModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 py-2.5 rounded-xl text-xs font-bold text-gray-700 transition">Batal</button>
+        <button onclick="verifyAdmin()" class="flex-1 bg-red-600 hover:bg-red-700 py-2.5 rounded-xl text-xs font-extrabold text-white transition shadow-md">Masuk Admin</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function goByCode() {
+      const kode = document.getElementById('input-kode-Cepat').value.trim();
+      if (!kode) return alert("Masukkan kode kuis terlebih dahulu!");
+      window.location.href = `siswa.html?kode=${kode.toUpperCase()}`;
+    }
+
+    function goByLink() {
+      let val = document.getElementById('input-link').value.trim();
+      if (!val) return alert("Tempel link atau kode penugasan terlebih dahulu!");
+      if (val.includes("?kode=")) {
+        window.location.href = val;
+      } else {
+        window.location.href = `siswa.html?kode=${val.toUpperCase()}`;
+      }
+    }
+
+    function openAdminModal() { document.getElementById('admin-modal').classList.remove('hidden'); }
+    function closeAdminModal() { document.getElementById('admin-modal').classList.add('hidden'); }
+
+    function verifyAdmin() {
+      const u = document.getElementById('adm-user').value.trim();
+      const p = document.getElementById('adm-pass').value.trim();
+      if (u === "Admin" && p === "Andou") {
+        window.location.href = "admin.html";
+      } else {
+        alert("Akses ditolak! Username atau Password salah.");
+      }
+    }
+  </script>
+</body>
+</html>
