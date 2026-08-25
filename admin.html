@@ -413,9 +413,14 @@
       });
 
       if (currentSelectedQuizCode) {
-        const subsSnap = await db.collection("quizzes").doc(code).collection("submissions").get();
         const batch = db.batch();
+        
+        const subsSnap = await db.collection("quizzes").doc(code).collection("submissions").get();
         subsSnap.forEach(doc => batch.delete(doc.ref));
+        
+        const chatSnap = await db.collection("quizzes").doc(code).collection("chat").get();
+        chatSnap.forEach(doc => batch.delete(doc.ref));
+        
         await batch.commit();
       }
 
@@ -523,7 +528,7 @@
           if (data.isBlocked) badge = `<span class="text-red-400 font-bold text-xs">TERBLOKIR ❌</span>`;
           else if (data.status === "selesai") badge = `<span class="text-blue-400 font-bold text-xs">Selesai (Skor: ${data.skor})</span>`;
 
-          const indikatorText = data.statusIndikator || (data.pernahTerblokir ? "Pernah ⚠️" : "Aman 🟢");
+          const indikatorText = data.statusIndikator || (data.pernahTerblokir ? `Pernah ⚠️ (${data.jumlahPelanggaran || 1}x)` : "Aman 🟢");
 
           tbody.innerHTML += `
             <tr class="border-b border-gray-800 hover:bg-gray-800/50">
@@ -550,11 +555,16 @@
 
     async function restartArcadeGame() {
       if(!activeQuizCode) return;
-      if(confirm("Ulangi kuis arcade? Semua siswa akan dikembalikan ke ruang tunggu (lobby) dan data lama akan dibersihkan.")) {
+      if(confirm("Ulangi kuis arcade? Semua siswa akan dikembalikan ke ruang tunggu (lobby) dan data lama serta chat akan dibersihkan.")) {
         const subsSnap = await db.collection("quizzes").doc(activeQuizCode).collection("submissions").get();
-        const batch = db.batch();
-        subsSnap.forEach(doc => batch.delete(doc.ref));
-        await batch.commit();
+        const batch1 = db.batch();
+        subsSnap.forEach(doc => batch1.delete(doc.ref));
+        await batch1.commit();
+
+        const chatSnap = await db.collection("quizzes").doc(activeQuizCode).collection("chat").get();
+        const batch2 = db.batch();
+        chatSnap.forEach(doc => batch2.delete(doc.ref));
+        await batch2.commit();
 
         await db.collection("quizzes").doc(activeQuizCode).update({ status: "waiting" });
         startQuizSession(activeQuizCode);
@@ -664,7 +674,7 @@
       if (!docSnap.exists) return alert("Kuis tidak ditemukan!");
       const data = docSnap.data();
 
-      if (!confirm("⚠️ PERINGATAN: Mengedit soal akan MERESET/MENHAPUS semua data pengerjaan nilai siswa yang sudah masuk untuk kuis ini. Lanjutkan?")) {
+      if (!confirm("⚠️ PERINGATAN: Mengedit soal akan MERESET/MENHAPUS semua data pengerjaan nilai dan chat siswa yang sudah masuk untuk kuis ini. Lanjutkan?")) {
         return;
       }
 
