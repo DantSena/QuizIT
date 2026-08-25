@@ -248,14 +248,15 @@
 
           const data = doc.data();
 
-          // Langsung buka kunci tanpa memunculkan alert pop-up
-          if (data.isBlocked === false && hasBeenBlocked) {
-            hasBeenBlocked = false;
+          // PERBAIKAN: Jika database mengubah isBlocked menjadi false, langsung buka kunci layar merah!
+          if (data.isBlocked === false) {
             document.getElementById('screen-blocked').classList.add('hidden');
             
-            isFinished = false;
-            document.getElementById('screen-quiz').classList.remove('hidden');
-            startTimer();
+            // Jika sebelumnya kuis belum selesai, kembalikan ke layar ujian
+            if (!isFinished && document.getElementById('screen-quiz').classList.contains('hidden')) {
+              document.getElementById('screen-quiz').classList.remove('hidden');
+              if (!timerInterval) startTimer();
+            }
           }
         });
     }
