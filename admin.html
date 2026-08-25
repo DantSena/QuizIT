@@ -528,7 +528,7 @@
           if (data.isBlocked) badge = `<span class="text-red-400 font-bold text-xs">TERBLOKIR ❌</span>`;
           else if (data.status === "selesai") badge = `<span class="text-blue-400 font-bold text-xs">Selesai (Skor: ${data.skor})</span>`;
 
-          const indikatorText = data.statusIndikator || (data.pernahTerblokir ? `Pernah ⚠️ (${data.jumlahPelanggaran || 1}x)` : "Aman 🟢");
+          const indikatorText = data.statusIndikator || (data.pernahTerblokir ? "TERBLOKIR ❌" : "Aman 🟢");
 
           tbody.innerHTML += `
             <tr class="border-b border-gray-800 hover:bg-gray-800/50">
@@ -538,8 +538,7 @@
               <td class="p-3 text-xs text-yellow-300 font-medium">${indikatorText}</td>
               <td class="p-3">${badge}</td>
               <td class="p-3 text-center space-x-1">
-                ${data.pernahTerblokir ? `<button onclick="resetStudentPenalty('${code}', '${id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded text-xs font-bold transition">Reset Poin</button>` : ''}
-                ${data.isBlocked ? `<button onclick="db.collection('quizzes').doc('${code}').collection('submissions').doc('${id}').update({isBlocked: false})" class="bg-yellow-600 text-black px-2 py-1 rounded text-xs font-bold">Unblock</button>` : ''}
+                ${data.isBlocked ? `<button onclick="db.collection('quizzes').doc('${code}').collection('submissions').doc('${id}').update({isBlocked: false, statusIndikator: 'Aman 🟢'})" class="bg-yellow-600 text-black px-2 py-1 rounded text-xs font-bold">Unblock</button>` : ''}
                 <button onclick="db.collection('quizzes').doc('${code}').collection('submissions').doc('${id}').delete()" class="bg-red-600 text-white px-2 py-1 rounded text-xs font-semibold">Kick</button>
               </td>
             </tr>`;
@@ -599,17 +598,6 @@
       }
     }
 
-    async function resetStudentPenalty(quizCode, studentDocId) {
-      if (confirm("Reset catatan pelanggaran dan kembalikan poin/penalti siswa ini?")) {
-        await db.collection("quizzes").doc(quizCode).collection("submissions").doc(studentDocId).update({
-          pernahTerblokir: false,
-          jumlahPelanggaran: 0,
-          statusIndikator: "Aman Bersih 🟢"
-        });
-        alert("Pelanggaran & poin siswa berhasil direset oleh Admin!");
-      }
-    }
-
     function loadHistoryList() {
       db.collection("quizzes").onSnapshot((snapshot) => {
         const container = document.getElementById('history-quiz-list');
@@ -661,7 +649,7 @@
               <td class="p-3 font-bold text-white">${sData.nama}</td>
               <td class="p-3 text-xs text-gray-400">${sData.jamSelesai || '-'}</td>
               <td class="p-3 font-mono text-xs text-yellow-400">${mins}:${secs}</td>
-              <td class="p-3 text-xs ${sData.pernahTerblokir ? 'text-red-400 font-bold' : 'text-green-400'}">${sData.pernahTerblokir ? `Pernah ⚠️ (${sData.jumlahPelanggaran || 1}x)` : 'Aman 🟢'}</td>
+              <td class="p-3 text-xs ${sData.pernahTerblokir ? 'text-red-400 font-bold' : 'text-green-400'}">${sData.pernahTerblokir ? 'Pernah ⚠️' : 'Aman 🟢'}</td>
               <td class="p-3 text-right font-extrabold text-green-400 text-base">${sData.skor ?? 0}</td>
             </tr>`;
         });
