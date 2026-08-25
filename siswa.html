@@ -248,10 +248,9 @@
 
           const data = doc.data();
 
-          // Respon Unblock 1-klik yang mulus
+          // Langsung buka kunci tanpa memunculkan alert pop-up
           if (data.isBlocked === false && hasBeenBlocked) {
             hasBeenBlocked = false;
-            alert("Status blokir Anda telah dicabut oleh pengawas. Silakan melanjutkan ujian.");
             document.getElementById('screen-blocked').classList.add('hidden');
             
             isFinished = false;
