@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuizIT Scholar Core - Beranda</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Menghubungkan file CSS Eksternal -->
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="logo.webp">
+</head>
+<body class="bg-white text-gray-800 min-h-screen flex flex-col font-sans select-none">
+
+<!-- ================= ANIMASI OPENING / SPLASH SCREEN ================= -->
+<div id="splash-screen" class="fixed inset-0 bg-white z-[999] flex flex-col items-center justify-center transition-opacity duration-700 ease-in-out">
+  <div class="flex flex-col items-center space-y-5 text-center">
+    
+    <!-- Logo webp diam tenang -->
+    <img src="logo.webp" alt="Logo QuizIT" class="w-16 h-16 object-contain rounded-2xl shadow-md">
+    
+    <!-- Teks SCHOLAR CORE dengan animasi naik turun per huruf & warna merah -->
+    <div id="splash-title" class="font-black text-[#1e1b4b] tracking-widest text-lg md:text-xl flex space-x-1">
+      <span class="inline-block animate-bounce" style="animation-delay: 0s;">S</span>
+      <span class="inline-block animate-bounce" style="animation-delay: 0.1s;">C</span>
+      <span class="inline-block animate-bounce" style="animation-delay: 0.2s;">H</span>
+      <span class="inline-block animate-bounce" style="animation-delay: 0.3s;">O</span>
+      <span class="inline-block animate-bounce" style="animation-delay: 0.4s;">L</span>
+      <span class="inline-block animate-bounce" style="animation-delay: 0.5s;">A</span>
+      <span class="inline-block animate-bounce" style="animation-delay: 0.6s;">R</span>
+      <span class="inline-block animate-bounce" style="animation-delay: 0.7s;">&nbsp;</span>
+      <span class="inline-block animate-bounce" style="animation-delay: 0.8s;">C</span>
+      <span class="inline-block animate-bounce" style="animation-delay: 0.9s;">O</span>
+      <span class="inline-block animate-bounce" style="animation-delay: 1.0s;">R</span>
+      <span class="inline-block animate-bounce" style="animation-delay: 1.1s;">E</span>
+    </div>
+
+    <!-- Loading Bar -->
+    <div class="w-48 h-2 bg-gray-200 rounded-full overflow-hidden shadow-inner mt-2">
+      <div id="loading-bar" class="h-full bg-gradient-to-r from-blue-600 to-red-600 w-0 transition-all duration-[2800ms] ease-out"></div>
+    </div>
+
+  </div>
+</div>
+
+  <!-- ================= NAVBAR ATAS ================= -->
+  <header class="w-full bg-white border-b border-gray-200 sticky top-0 z-50 px-6 py-3.5 flex justify-between items-center shadow-sm">
+    <div class="flex items-center gap-2.5 cursor-pointer" onclick="location.reload()">
+      <!-- Ganti kotak merah 'IT' dengan file logo.webp dan atur ukurannya agar pas -->
+      <img src="logo.webp" alt="Logo" class="w-9 h-9 object-contain rounded-xl shadow-md">
+      
+      <span class="font-black tracking-tight text-xl text-[#1e1b4b]">
+        Quiz<span class="text-red-600">IT</span> 
+        <span class="text-[9px] text-orange-600 uppercase tracking-widest block -mt-1 font-extrabold">Scholar Core</span>
+      </span>
+    </div>
+
+    <button onclick="toggleMenu()" class="p-2.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-xl transition focus:outline-none text-[#1e1b4b]">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path>
+      </svg>
+    </button>
+  </header>
+
+  <!-- DROPDOWN / MENU NAVBAR -->
+  <div id="nav-dropdown" class="hidden absolute top-16 right-6 w-72 bg-white border border-gray-200 rounded-2xl shadow-2xl z-50 p-4 space-y-3">
+    <div class="text-[10px] uppercase font-bold text-gray-400 px-1">Menu Navigasi & Tautan</div>
+    
+    <div class="space-y-1.5 p-2.5 bg-gray-50 rounded-xl border border-gray-200">
+      <label class="block text-[10px] font-bold uppercase text-blue-600">🔗 Masukkan Link Kuis</label>
+      <div class="flex gap-1.5">
+        <input type="text" id="input-link-nav" placeholder="Tempel link ujian..." class="flex-1 p-2 bg-white border border-gray-300 rounded-lg text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono">
+        <button onclick="bukaDariLinkNav()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg font-bold text-xs transition shadow">Buka</button>
+      </div>
+    </div>
+
+    <a href="admin.html" class="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs transition border border-red-200">
+      <span>🛠️</span> Panel DEV / Admin
+    </a>
+
+    <a href="https://wa.me/6285785857866?text=Halo%20Dev,%20saya%20ingin%20bertanya%20tentang%20QuizIT%20Scholar%20Core" target="_blank" class="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-green-50 hover:bg-green-100 text-green-700 font-bold text-xs transition border border-green-200">
+      <span>💬</span> Hubungi DEV (WhatsApp)
+    </a>
+  </div>
+
+  <!-- ================= KONTEN UTAMA BERANDA ================= -->
+  <main class="flex-1 flex flex-col items-center justify-center px-4 py-8 text-center max-w-3xl mx-auto w-full space-y-8">
+    
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 bg-orange-50 border border-orange-200 rounded-full text-orange-700 text-xs font-bold shadow-sm">
+      <span>⚡</span> Ruang Quiz interaktif yang pas buat barengan sekelas 😎
+    </div>
+
+    <div class="space-y-3">
+      <h1 class="text-4xl md:text-5xl font-black text-[#1e1b4b] tracking-tight leading-tight">
+        Udah Siap <span class="text-red-600">Belum?</span>
+      </h1>
+      <p class="text-sm md:text-base text-gray-500 font-medium max-w-xl mx-auto">
+        Quiz online yang asik buat seru seruan bareng sekelas, tetap adil, dan rekap nilainya langsung beres buat warga SMASA.
+      </p>
+    </div>
+
+    <!-- KOTAK INPUT KODE 5 HURUF -->
+    <div class="w-full max-w-lg bg-white p-5 rounded-2xl border border-gray-200 shadow-xl space-y-3">
+      <div class="text-left">
+        <label class="block text-xs font-extrabold uppercase tracking-wider text-blue-600 mb-0.5">🔑 Masukkan Kode Kuis</label>
+        <p class="text-[11px] text-gray-400">Ketik 5 huruf kode dari pengawas/guru.</p>
+      </div>
+
+      <div class="flex gap-2">
+        <input type="text" id="input-kode-utama" placeholder="KODE 5 HURUF" maxlength="5" class="flex-1 p-3 bg-gray-50 border border-gray-300 rounded-xl text-[#1e1b4b] font-mono font-bold text-center tracking-widest uppercase focus:outline-none focus:ring-2 focus:ring-blue-500 text-base">
+        <button onclick="mulaiDenganKode()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-extrabold transition shadow-md">Mulai</button>
+      </div>
+    </div>
+
+    <!-- KOTAK PANDUAN SINGKAT PENGGUNAAN -->
+    <div class="w-full max-w-2xl bg-gray-50/80 p-6 rounded-2xl border border-gray-200 shadow-sm text-left space-y-4">
+      <div class="flex justify-between items-center border-b border-gray-200 pb-3">
+        <span class="text-xs font-black uppercase tracking-wider text-gray-700 flex items-center gap-1.5">
+          <span>💡</span> PANDUAN SINGKAT PENGGUNAAN
+        </span>
+        <span class="text-[10px] font-bold bg-blue-100 text-blue-700 px-2.5 py-1 rounded-md">Sistem Terpadu</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs space-y-1.5">
+          <h4 class="text-xs font-extrabold text-[#1e1b4b] flex items-center gap-1.5">
+            <span>🎓</span> Untuk Siswa (Arcade / Penugasan):
+          </h4>
+          <p class="text-[11px] text-gray-500 leading-relaxed">
+            Masukkan kode 5 huruf pada kolom di atas, atau tempel link penugasan langsung dari guru untuk mulai mengerjakan.
+          </p>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs space-y-1.5">
+          <h4 class="text-xs font-extrabold text-red-600 flex items-center gap-1.5">
+            <span>🔒</span> Untuk Pengawas / Admin:
+          </h4>
+          <p class="text-[11px] text-gray-500 leading-relaxed">
+            Klik tombol menu di atas (atau ke Panel DEV), masukkan kredensial khusus untuk membuat soal dan memantau ujian.
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- FOOTER DENGAN RUANG NAFAS YANG PAS -->
+  <footer class="w-full py-8 mt-auto text-center text-xs text-gray-400 border-t border-gray-100 font-medium">
+    V1.1 &copy; 2026 QuizIT Scholar Core &bull; Dibuat oleh orang gabut.
+  </footer>
+
+  <script>
+
+window.addEventListener("DOMContentLoaded", () => {
+      const splash = document.getElementById("splash-screen");
+      const bar = document.getElementById("loading-bar");
+
+      setTimeout(() => {
+        bar.style.width = "100%";
+      }, 100);
+
+      setTimeout(() => {
+        splash.style.opacity = "0"; // Fade out
+      }, 2800);
+
+      setTimeout(() => {
+        splash.style.display = "none";
+      }, 3500);
+    });
+    
+    function toggleMenu() {
+      const menu = document.getElementById('nav-dropdown');
+      menu.classList.toggle('hidden');
+    }
+
+    window.addEventListener('click', function(e) {
+      const menu = document.getElementById('nav-dropdown');
+      const btn = document.querySelector('header button');
+      if (!menu.contains(e.target) && !btn.contains(e.target)) {
+        menu.classList.add('hidden');
+      }
+    });
+
+    function mulaiDenganKode() {
+      const kode = document.getElementById('input-kode-utama').value.trim().toUpperCase();
+      if (!kode || kode.length < 5) {
+        alert("Masukkan kode kuis 5 huruf dengan benar!");
+        return;
+      }
+      window.location.href = `siswa.html?kode=${kode}`;
+    }
+
+    function bukaDariLinkNav() {
+      let val = document.getElementById('input-link-nav').value.trim();
+      if (!val) return alert("Masukkan link atau kode terlebih dahulu!");
+      
+      if (val.length === 5) {
+        window.location.href = `siswa.html?kode=${val.toUpperCase()}`;
+        return;
+      }
+
+      try {
+        const url = new URL(val);
+        const kodeParam = url.searchParams.get('kode');
+        if (kodeParam) {
+          window.location.href = `siswa.html?kode=${kodeParam.toUpperCase()}`;
+        } else {
+          window.location.href = val;
+        }
+      } catch (err) {
+        window.location.href = `siswa.html?kode=${val.toUpperCase()}`;
+      }
+    }
+  </script>
+</body>
+</html>
