@@ -127,6 +127,24 @@
       <span id="final-score-value" class="text-4xl font-black text-green-600">0</span>
     </div>
 
+    <!-- ================= LAYAR 5: AKUN TERKUNCI / TERBLOKIR ================= -->
+  <div id="screen-blocked" class="hidden max-w-md w-full bg-white p-8 rounded-2xl border border-red-200 shadow-xl text-center space-y-6">
+    <div class="w-16 h-16 bg-red-600 rounded-2xl mx-auto flex items-center justify-center text-3xl shadow-md text-white font-bold animate-bounce">🚫</div>
+    <div>
+      <h2 class="text-2xl font-black text-red-600">UJIAN ANDA DIKUNCI!</h2>
+      <p class="text-xs text-gray-500 mt-1 font-medium">Terdeteksi melakukan kecurangan (pindah tab atau keluar dari halaman ujian).</p>
+    </div>
+    
+    <div class="bg-red-50 p-4 rounded-xl border border-red-200">
+      <span class="text-xs text-red-600 font-bold block">Status Akses:</span>
+      <span class="text-lg font-black text-red-700">AKUN TERBLOKIR PERMANEN</span>
+    </div>
+
+    <button onclick="location.href='index.html'" class="w-full bg-gray-800 hover:bg-gray-900 text-white py-3.5 rounded-xl font-extrabold transition shadow-lg text-sm">
+      Keluar ke Beranda 🏠
+    </button>
+  </div>
+
     <!-- Leaderboard Kelas -->
     <div class="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden text-left">
       <div class="bg-gray-100 p-2.5 border-b border-gray-200 text-center">
@@ -222,22 +240,22 @@ function fetchLeaderboard() {
     let warningCount = 0;
     window.addEventListener('blur', async () => {
       if (isFinished || !studentDocId) return;
-      warningCount++;
-      if (warningCount >= 2) {
-        await db.collection("quizzes").doc(quizCode).collection("submissions").doc(studentDocId).update({
-          isBlocked: true,
-          statusIndikator: "TERBLOKIR (Kecurangan ❌)"
-        });
-        alert("⚠️ ANDA TELAH DIBLOKIR! Terdeteksi meninggalkan halaman ujian berulang kali.");
-        location.href = 'index.html';
-      } else {
-        await db.collection("quizzes").doc(quizCode).collection("submissions").doc(studentDocId).update({
-          pernahTerblokir: true,
-          jumlahPelanggaran: warningCount,
-          statusIndikator: "Pernah Pindah Tab ⚠️"
-        });
-        alert("PERINGATAN PELANGGARAN (" + warningCount + "/2): Jangan meninggalkan halaman ujian atau Anda akan diblokir!");
-      }
+
+      isFinished = true;
+      if (timerInterval) clearInterval(timerInterval);
+
+      // Langsung update status terblokir ke database
+      await db.collection("quizzes").doc(quizCode).collection("submissions").doc(studentDocId).update({
+        isBlocked: true,
+        statusIndikator: "TERBLOKIR (Kecurangan ❌)"
+      });
+
+      // Sembunyikan semua layar lain, tampilkan layar khusus blokir
+      document.getElementById('screen-join').classList.add('hidden');
+      document.getElementById('screen-lobby').classList.add('hidden');
+      document.getElementById('screen-quiz').classList.add('hidden');
+      document.getElementById('screen-score').classList.add('hidden');
+      document.getElementById('screen-blocked').classList.remove('hidden');
     });
 
     // Pantau Status Kuis Real-time (Aman saat admin menghentikan ujian, langsung ke layar skor)
