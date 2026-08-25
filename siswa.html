@@ -289,17 +289,16 @@
       }
     });
 
-    // SISTEM KEAMANAN TEGAS (1x KECURANGAN LANGSUNG BLOKIR TANPA PERINGATAN)
+    // 1. Saat kecurangan terjadi (pindah tab), simpan statusnya ke database
     window.addEventListener('blur', async () => {
-      if (isFinished || !studentDocId || hasBeenBlocked) return;
+      if (isFinished || !studentDocId) return;
 
-      hasBeenBlocked = true;
       isFinished = true;
       if (timerInterval) clearInterval(timerInterval);
 
+      // Simpan status pernah terblokir langsung ke Firestore
       await db.collection("quizzes").doc(quizCode).collection("submissions").doc(studentDocId).update({
         pernahTerblokir: true,
-        jumlahPelanggaran: 1,
         isBlocked: true,
         statusIndikator: "TERBLOKIR (Kecurangan ❌)"
       });
@@ -564,8 +563,17 @@
         }
       });
 
-      // PENALTI BERBASIS PERSENTASE (10% dari total skor murni per pelanggaran)
-      let penaltyDeduction = hasBeenBlocked ? Math.round(rawScore * 0.10) : 0;
+      // Ambil data terbaru dari Firestore untuk memastikan status pelanggaran terbaca
+      let kenaPenalti = false;
+      if (studentDocId) {
+        const docSnap = await db.collection("quizzes").doc(quizCode).collection("submissions").doc(studentDocId).get();
+        if (docSnap.exists) {
+          kenaPenalti = docSnap.data().pernahTerblokir === true;
+        }
+      }
+
+      // PENALTI 10% DARI TOTAL SKOR MURNI JIKA PERNAH CURANG/TERBLOKIR
+      let penaltyDeduction = kenaPenalti ? Math.round(rawScore * 0.10) : 0;
       let finalScore = Math.round(rawScore) - penaltyDeduction;
       if (finalScore < 0) finalScore = 0;
 
@@ -577,7 +585,7 @@
           skor: finalScore,
           durasiDetik: secondsElapsed,
           jamSelesai: jamSelesaiStr,
-          statusIndikator: hasBeenBlocked ? "Selesai (Penalti 10%)" : "Selesai Bersih 🟢"
+          statusIndikator: kenaPenalti ? "Selesai (Penalti 10%)" : "Selesai Bersih 🟢"
         });
       }
 
@@ -586,7 +594,7 @@
       document.getElementById('screen-score').classList.remove('hidden');
       document.getElementById('final-score-value').innerText = finalScore;
 
-      if (hasBeenBlocked) {
+      if (kenaPenalti) {
         const penaltyEl = document.getElementById('penalty-info');
         penaltyEl.innerText = `⚠️ Skor dipotong 10% (${penaltyDeduction} poin) karena terdeteksi kecurangan/pindah tab`;
         penaltyEl.classList.remove('hidden');
