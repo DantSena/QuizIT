@@ -235,6 +235,7 @@
     }
 
     // 2. FUNGSI PANTAU STATUS SISWA (Mendengar Kick, Unblock 1-Klik, atau Admin Hentikan Ujian)
+    // 2. FUNGSI PANTAU STATUS SISWA (Mendengar Kick, Unblock 1-Klik)
     function listenStudentStatus() {
       if (!studentDocId) return;
       
@@ -248,12 +249,13 @@
 
           const data = doc.data();
 
-          // PERBAIKAN: Jika database mengubah isBlocked menjadi false, langsung buka kunci layar merah!
+          // Jika admin menekan tombol Unblock (isBlocked diubah jadi false)
           if (data.isBlocked === false) {
+            // Sembunyikan layar blokir merah
             document.getElementById('screen-blocked').classList.add('hidden');
             
-            // Jika sebelumnya kuis belum selesai, kembalikan ke layar ujian
-            if (!isFinished && document.getElementById('screen-quiz').classList.contains('hidden')) {
+            // Kembalikan tampilan ke layar ujian jika belum selesai
+            if (!isFinished) {
               document.getElementById('screen-quiz').classList.remove('hidden');
               if (!timerInterval) startTimer();
             }
@@ -291,13 +293,11 @@
     });
 
     // 1. Saat kecurangan terjadi (pindah tab), simpan statusnya ke database
+    // 1. Saat kecurangan terjadi (pindah tab), catat ke database dan kunci layar
     window.addEventListener('blur', async () => {
       if (isFinished || !studentDocId) return;
 
-      isFinished = true;
-      if (timerInterval) clearInterval(timerInterval);
-
-      // Simpan status pernah terblokir langsung ke Firestore
+      // Catat status pelanggaran ke Firestore tanpa mengubah isFinished agar skor tetap bisa dihitung
       await db.collection("quizzes").doc(quizCode).collection("submissions").doc(studentDocId).update({
         pernahTerblokir: true,
         isBlocked: true,
