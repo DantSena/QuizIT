@@ -3,201 +3,227 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QuizIT Scholar Core - Ujian Siswa</title>
+  <title>QuizIT Scholar Core - Admin Panel & Creator</title>
   <script src="https://cdn.tailwindcss.com"></script>
   
   <!-- Firebase SDK Compat -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    @keyframes fadeInScale {
+      from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .question-card {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      animation: fadeInScale 0.35s ease-out forwards;
+    }
+    .question-card.deleting {
+      opacity: 0;
+      transform: scale(0.95);
+      pointer-events: none;
+    }
+  </style>
   <link rel="icon" type="image/png" href="logo.webp">
 </head>
-<body class="bg-gray-100 text-gray-800 min-h-screen flex flex-col items-center justify-center p-3 md:p-6 font-sans select-none">
+<body class="bg-gray-900 text-gray-100 min-h-screen p-4 select-none flex items-center justify-center">
 
-  <!-- ================= LAYAR 1: MASUKKAN NAMA / LOBBY ================= -->
-  <div id="screen-join" class="max-w-md w-full bg-white p-8 rounded-2xl border border-gray-200 shadow-xl text-center space-y-6">
-    <div class="w-14 h-14 bg-blue-600 rounded-2xl mx-auto flex items-center justify-center text-2xl shadow-md text-white font-bold">🎓</div>
-    <div>
-      <h1 class="text-2xl font-black text-[#1e1b4b]">Bergabung ke Ujian</h1>
-      <p id="join-quiz-title" class="text-xs text-blue-600 font-bold mt-1">Memuat informasi kuis...</p>
-    </div>
-
-    <div class="space-y-4 text-left">
+  <!-- ================= MODAL LOGIN ADMIN ================= -->
+  <div id="admin-login-screen" class="fixed inset-0 bg-gray-950 flex items-center justify-center p-4 z-50">
+    <div class="bg-gray-800 p-8 rounded-2xl max-w-sm w-full border border-gray-700 shadow-2xl text-center space-y-4">
+      <div class="w-12 h-12 bg-red-600 rounded-xl mx-auto flex items-center justify-center font-black text-white text-lg shadow-md">🔒</div>
       <div>
-        <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Nama Lengkap Siswa</label>
-        <input type="text" id="student-name-input" placeholder="Masukkan nama kamu..." class="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium">
+        <h2 class="text-xl font-extrabold text-white">Otorisasi Admin</h2>
+        <p class="text-xs text-gray-400 mt-1">Masukkan kata sandi pengawas/admin</p>
       </div>
-    </div>
-
-    <button onclick="joinQuiz()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-extrabold transition shadow-lg text-sm">Mulai Ujian ➔</button>
-    <a href="index.html" class="block text-xs text-gray-400 hover:text-gray-600 pt-2 font-medium">← Kembali ke Beranda</a>
-  </div>
-
-  <!-- ================= LAYAR 2: LOBBY TUNGGU (MODE ARCADE) ================= -->
-  <div id="screen-lobby" class="hidden max-w-lg w-full bg-white p-8 rounded-2xl border border-gray-200 shadow-xl text-center space-y-6">
-    <div class="w-14 h-14 bg-orange-500 rounded-2xl mx-auto flex items-center justify-center text-2xl shadow-md text-white animate-pulse">⏳</div>
-    <div>
-      <h2 class="text-2xl font-black text-[#1e1b4b]">Menunggu Pengawas Memulai...</h2>
-      <p class="text-xs text-gray-500 mt-1 font-medium">Kamu sudah berada di ruang tunggu. Ngobrol dulu yuk di chat bawah!</p>
-    </div>
-
-    <div class="bg-gray-50 rounded-xl border border-gray-200 flex flex-col h-64 text-left">
-      <div class="p-3 border-b border-gray-200 bg-white rounded-t-xl text-xs font-bold text-blue-600">💬 Ruang Obrolan Kelas</div>
-      <div id="lobby-chat-box" class="flex-1 p-3 overflow-y-auto space-y-2 flex flex-col text-xs"></div>
-      <div class="p-2 border-t border-gray-200 flex gap-2">
-        <input type="text" id="lobby-chat-input" placeholder="Ketik pesan..." class="flex-1 bg-white border border-gray-300 rounded-lg p-2 text-xs text-gray-800 focus:outline-none">
-        <button onclick="sendLobbyMessage()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs">Kirim</button>
-      </div>
+      <input type="password" id="admin-pass-input" placeholder="Kata Sandi..." class="w-full p-3 bg-gray-900 border border-gray-700 rounded-xl text-center text-white font-bold tracking-widest focus:outline-none focus:ring-2 focus:ring-red-500 text-sm">
+      <button onclick="verifyAdminPassword()" class="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl font-extrabold transition shadow-lg text-xs uppercase tracking-wider">Masuk Panel ➔</button>
+      <a href="index.html" class="block text-xs text-gray-500 hover:text-gray-400 pt-2">← Kembali ke Beranda</a>
     </div>
   </div>
 
-  <!-- ================= LAYAR 3: UTAMA EXAMBRO ================= -->
-  <div id="screen-quiz" class="hidden max-w-4xl w-full space-y-4">
+  <!-- ================= KONTEN UTAMA ADMIN ================= -->
+  <div id="admin-main-content" class="hidden max-w-5xl w-full mx-auto my-6 bg-gray-800 p-4 md:p-8 rounded-2xl shadow-2xl border border-gray-700">
     
-    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row justify-between items-center gap-3">
-      <div>
-        <h2 id="exambro-quiz-title" class="text-sm font-black text-[#1e1b4b]">Judul Ujian</h2>
-        <span class="text-[11px] text-gray-500">SMA Negeri 1 Nganjuk &bull; Sistem Exambro Core</span>
-      </div>
-      <div class="bg-orange-50 px-4 py-2 rounded-xl border border-orange-200 font-mono text-orange-600 font-extrabold text-sm flex items-center gap-2">
-        <span>⏱️ Sisa Waktu:</span> <span id="timer-display">00:00</span>
-      </div>
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      
-      <!-- Kolom Kiri: Pertanyaan & Opsi -->
-      <div class="lg:col-span-2 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-5 flex flex-col justify-between">
-        <div class="space-y-4">
-          <div class="flex justify-between items-center border-b border-gray-100 pb-3">
-            <span id="quiz-question-number" class="text-xs font-bold uppercase text-blue-600">Soal No. 1</span>
-            <span id="badge-ragu" class="hidden bg-yellow-100 text-yellow-800 text-[10px] font-bold px-2.5 py-1 rounded-md border border-yellow-300">⚠️ Ragu-Ragu</span>
-          </div>
-
-          <p id="question-text" class="text-sm md:text-base font-bold text-gray-800 leading-relaxed"></p>
-          
-          <div id="question-image-container" class="hidden text-center">
-            <img id="question-image" src="" alt="Gambar Soal" class="max-h-56 mx-auto rounded-xl border border-gray-200 shadow-sm object-contain">
-          </div>
-
-          <!-- Area Opsi -->
-          <div id="options-container" class="space-y-2.5 pt-2"></div>
-        </div>
-
-        <div class="flex justify-between items-center pt-4 border-t border-gray-100 mt-6 gap-2">
-          <button onclick="prevQuestion()" id="btn-prev" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-xl text-xs font-bold transition">← Sebelumnya</button>
-          <button onclick="toggleRaguRagu()" id="btn-ragu" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-xl text-xs font-extrabold transition shadow">⭐ Ragu-ragu</button>
-          <button onclick="nextQuestion()" id="btn-next" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-xs font-extrabold transition shadow">Selanjutnya ➔</button>
-        </div>
-      </div>
-
-      <!-- Kolom Kanan: Kartu Nomor Soal (Grid) -->
-      <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-4 flex flex-col justify-between">
+    <!-- HEADER & NAVIGASI TAB ADMIN -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b border-gray-700 pb-4 gap-4">
+      <div class="flex justify-between items-center w-full md:w-auto">
         <div>
-          <h3 class="text-xs font-black uppercase text-gray-700 mb-3 tracking-wider flex items-center justify-between">
-            <span>Daftar Soal</span>
-            <span class="text-[10px] text-gray-400 font-normal">Klik untuk lompat</span>
-          </h3>
-          <div id="question-grid" class="grid grid-cols-5 gap-2 max-h-72 overflow-y-auto p-1"></div>
+          <h1 class="text-2xl md:text-3xl font-extrabold text-blue-500">QuizIT Admin</h1>
+          <p class="text-xs text-gray-400 mt-0.5">Platform Ujian Online SMASA</p>
         </div>
+        <a href="index.html" class="md:hidden bg-gray-700 hover:bg-gray-600 text-gray-200 px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1">
+          🏠 <span>Beranda</span>
+        </a>
+      </div>
 
-        <div class="space-y-2 pt-3 border-t border-gray-100 text-[11px] text-gray-500">
-          <div class="flex items-center gap-2"><span class="w-3 h-3 bg-blue-600 rounded inline-block"></span> Sudah dijawab</div>
-          <div class="flex items-center gap-2"><span class="w-3 h-3 bg-yellow-500 rounded inline-block"></span> Ragu-ragu (Ditandai)</div>
-          <div class="flex items-center gap-2"><span class="w-3 h-3 bg-gray-200 rounded inline-block"></span> Belum dijawab</div>
+      <div class="flex items-center gap-2 w-full md:w-auto justify-between">
+        <div class="flex bg-gray-900 p-1.5 rounded-xl border border-gray-700 gap-1 flex-1 md:flex-none">
+          <button onclick="switchTab('creator')" id="tab-btn-creator" class="flex-1 md:flex-none px-3 py-2 rounded-lg text-xs font-bold transition bg-blue-600 text-white">✍️ Buat</button>
+          <button onclick="switchTab('monitor')" id="tab-btn-monitor" class="flex-1 md:flex-none px-3 py-2 rounded-lg text-xs font-bold transition text-gray-400 hover:text-white">🔴 Live</button>
+          <button onclick="switchTab('history')" id="tab-btn-history" class="flex-1 md:flex-none px-3 py-2 rounded-lg text-xs font-bold transition text-gray-400 hover:text-white">📜 Riwayat</button>
         </div>
-
-        <button onclick="submitQuiz()" class="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-black text-xs transition shadow-md uppercase tracking-wider">
-          Selesaikan Ujian 🏁
-        </button>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- ================= LAYAR 4: SKOR AKHIR / SELESAI & LEADERBOARD ================= -->
-  <div id="screen-score" class="hidden max-w-md w-full bg-white p-8 rounded-2xl border border-gray-200 shadow-xl text-center space-y-6">
-    <div class="w-16 h-16 bg-green-600 rounded-2xl mx-auto flex items-center justify-center text-3xl shadow-md text-white font-bold">🏆</div>
-    <div>
-      <h2 class="text-2xl font-black text-[#1e1b4b]" id="score-title-text">Ujian Telah Selesai!</h2>
-      <p class="text-xs text-gray-500 mt-1 font-medium" id="score-desc-text">Terima kasih telah berpartisipasi dengan jujur.</p>
-    </div>
-    
-    <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
-      <span class="text-xs text-gray-500 block font-medium">Skor Akhir Kamu:</span>
-      <span id="final-score-value" class="text-4xl font-black text-green-600">0</span>
-    </div>
-
-    <!-- ================= LAYAR 5: AKUN TERKUNCI / TERBLOKIR ================= -->
-  <div id="screen-blocked" class="hidden max-w-md w-full bg-white p-8 rounded-2xl border border-red-200 shadow-xl text-center space-y-6">
-    <div class="w-16 h-16 bg-red-600 rounded-2xl mx-auto flex items-center justify-center text-3xl shadow-md text-white font-bold animate-bounce">🚫</div>
-    <div>
-      <h2 class="text-2xl font-black text-red-600">UJIAN ANDA DIKUNCI!</h2>
-      <p class="text-xs text-gray-500 mt-1 font-medium">Terdeteksi melakukan kecurangan (pindah tab atau keluar dari halaman ujian).</p>
-    </div>
-    
-    <div class="bg-red-50 p-4 rounded-xl border border-red-200">
-      <span class="text-xs text-red-600 font-bold block">Status Akses:</span>
-      <span class="text-lg font-black text-red-700">AKUN TERBLOKIR PERMANEN</span>
-    </div>
-
-    <button onclick="location.href='index.html'" class="w-full bg-gray-800 hover:bg-gray-900 text-white py-3.5 rounded-xl font-extrabold transition shadow-lg text-sm">
-      Keluar ke Beranda 🏠
-    </button>
-  </div>
-
-    <!-- Leaderboard Kelas -->
-    <div class="bg-gray-50 rounded-xl border border-gray-200 overflow-hidden text-left">
-      <div class="bg-gray-100 p-2.5 border-b border-gray-200 text-center">
-        <h3 class="text-xs font-black uppercase text-gray-700">🏆 Top 3 Leaderboard Kelas</h3>
-      </div>
-      <div class="p-2">
-        <table class="w-full text-left text-xs">
-          <tbody id="leaderboard-body" class="divide-y divide-gray-200">
-            <!-- Data leaderboard masuk sini -->
-          </tbody>
-        </table>
+        <a href="index.html" class="hidden md:flex bg-gray-700 hover:bg-gray-600 text-gray-200 px-3.5 py-2.5 rounded-xl text-xs font-bold transition items-center gap-1.5">
+          🏠 <span>Beranda</span>
+        </a>
       </div>
     </div>
 
-    <button onclick="location.href='index.html'" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-extrabold transition shadow-lg text-sm">
-      Kembali ke Beranda 🏠
-    </button>
-  </div>
+    <!-- ================= TAB 1: CREATOR ================= -->
+    <div id="view-creator" class="space-y-6">
+      <div class="bg-gray-900 p-4 md:p-5 rounded-xl border border-gray-700 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase text-gray-400 mb-2">Nama / Judul Kuis</label>
+          <input type="text" id="quiz-title" placeholder="Misal: Ulangan Harian Bab 1 Fisika" class="w-full p-3 bg-gray-800 border border-gray-600 rounded-lg text-white font-bold text-base md:text-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        
+        <div>
+          <label class="block text-xs font-semibold uppercase text-gray-400 mb-2">Pilih Mode Ujian</label>
+          <div class="flex flex-col md:flex-row gap-4">
+            <label class="flex-1 cursor-pointer">
+              <input type="radio" name="quiz-mode" value="arcade" checked class="peer hidden">
+              <div class="p-3.5 rounded-xl border-2 border-gray-700 bg-gray-800 peer-checked:border-blue-500 peer-checked:bg-blue-900/30 transition">
+                <h4 class="font-bold text-blue-400 text-sm mb-0.5">🎮 Mode Arcade (Live)</h4>
+                <p class="text-[11px] text-gray-400">Siswa kumpul di ruang tunggu (Lobby & Chat). Dimulai serentak.</p>
+              </div>
+            </label>
+            <label class="flex-1 cursor-pointer">
+              <input type="radio" name="quiz-mode" value="penugasan" class="peer hidden">
+              <div class="p-3.5 rounded-xl border-2 border-gray-700 bg-gray-800 peer-checked:border-green-500 peer-checked:bg-green-900/30 transition">
+                <h4 class="font-bold text-green-400 text-sm mb-0.5">📝 Mode Penugasan</h4>
+                <p class="text-[11px] text-gray-400">Siswa langsung mengerjakan kapan saja lewat Link.</p>
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
 
-  <!-- SCRIPT UTAMA EXAMBRO SISWA -->
-   
-  <script>
+      <!-- Container Soal -->
+      <div id="questions-container" class="space-y-6"></div>
 
-function fetchLeaderboard() {
-      db.collection("quizzes").doc(quizCode).collection("submissions")
-        .where("status", "==", "selesai")
-        .onSnapshot(snap => {
-          let list = [];
-          snap.forEach(doc => list.push({ ...doc.data(), id: doc.id }));
-          list.sort((a, b) => b.skor - a.skor || a.durasiDetik - b.durasiDetik);
+      <div class="flex flex-col sm:flex-row gap-4 border-t border-gray-700 pt-6">
+        <button onclick="addQuestionCard()" class="flex-1 bg-gray-700 hover:bg-gray-600 text-yellow-400 border border-yellow-500/40 py-3 rounded-xl font-bold transition flex items-center justify-center gap-2">➕ Tambah Soal di Bawah</button>
+        <button onclick="saveAndGenerateQuiz()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-extrabold transition shadow-lg shadow-blue-600/30">💾 Simpan Kuis</button>
+      </div>
+    </div>
 
-          const tbody = document.getElementById('leaderboard-body');
-          tbody.innerHTML = '';
-          
-          if (list.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="3" class="p-3 text-center text-gray-400">Belum ada data leader.</td></tr>';
-            return;
-          }
+    <!-- ================= TAB 2: MONITOR & LOBBY ================= -->
+    <div id="view-monitor" class="hidden space-y-6">
+      <div class="bg-gray-900 p-4 rounded-xl border border-gray-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <span class="text-xs text-gray-400 block">Kuis yang Sedang Aktif:</span>
+          <h2 id="active-quiz-name" class="text-xl font-bold text-yellow-400">Belum Ada Kuis Aktif</h2>
+          <div class="flex gap-2 mt-1">
+            <span id="active-quiz-code-badge" class="inline-block bg-blue-900/60 text-blue-300 font-mono text-xs px-2.5 py-0.5 rounded border border-blue-700">Kode: -</span>
+            <span id="active-quiz-mode-badge" class="inline-block bg-purple-900/60 text-purple-300 text-[10px] px-2 py-0.5 rounded border border-purple-700 font-bold uppercase">Mode: -</span>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-2 w-full md:w-auto">
+          <button onclick="startArcadeGame()" id="btn-start-arcade" class="hidden bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-xl font-bold text-xs transition shadow-lg shadow-green-600/30">🚀 Mulai Permainan!</button>
+          <button onclick="restartArcadeGame()" id="btn-restart-arcade" class="hidden bg-yellow-600 hover:bg-yellow-700 text-black px-4 py-2.5 rounded-xl font-bold text-xs transition shadow-lg shadow-yellow-600/30">🔄 Ulangi Lagi (Lobby)</button>
+          <button onclick="stopActiveQuiz()" id="btn-stop-quiz" class="hidden bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-xl font-bold text-xs transition shadow-lg shadow-red-600/30">🛑 Hentikan Ujian</button>
+        </div>
+      </div>
 
-          list.slice(0, 3).forEach((item, index) => {
-            const isMe = item.nama === studentName;
-            const medals = ['🥇', '🥈', '🥉'];
-            tbody.innerHTML += `
-              <tr class="${isMe ? 'bg-blue-50 font-bold' : 'bg-white'}">
-                <td class="p-2 w-10 text-center">${medals[index] || '👑'}</td>
-                <td class="p-2 text-gray-800">${item.nama} ${isMe ? '(Kamu)' : ''}</td>
-                <td class="p-2 text-right font-extrabold text-blue-600">${item.skor}</td>
+      <div id="monitor-lobby-section" class="hidden grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-gray-900 rounded-xl border border-gray-700 flex flex-col h-96">
+          <div class="p-3 border-b border-gray-800 bg-gray-800/50 rounded-t-xl"><h3 class="font-bold text-blue-400 text-sm">💬 Live Chat Siswa</h3></div>
+          <div id="chat-box" class="flex-1 p-4 overflow-y-auto space-y-3 flex flex-col text-sm"></div>
+          <div class="p-3 border-t border-gray-800 flex gap-2">
+            <input type="text" id="chat-input" placeholder="Ketik pesan..." class="flex-1 bg-gray-800 border border-gray-700 rounded-lg p-2 text-xs text-white focus:outline-none">
+            <button onclick="sendAdminMessage()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-bold text-xs">Kirim</button>
+          </div>
+        </div>
+        <div class="bg-gray-900 rounded-xl border border-gray-700 flex flex-col h-96">
+          <div class="p-3 border-b border-gray-800 bg-gray-800/50 rounded-t-xl"><h3 class="font-bold text-yellow-400 text-sm">👥 Menunggu di Lobby (<span id="lobby-count">0</span>)</h3></div>
+          <div id="lobby-list" class="flex-1 p-4 overflow-y-auto space-y-2"></div>
+        </div>
+      </div>
+
+      <div id="monitor-table-section" class="hidden">
+        <h3 class="text-sm font-bold text-blue-400 mb-3">Daftar Siswa Mengerjakan Real-time</h3>
+        <div class="overflow-x-auto bg-gray-900 rounded-xl border border-gray-700">
+          <table class="w-full text-left text-sm text-gray-300">
+            <thead class="bg-gray-700 text-xs uppercase text-gray-400">
+              <tr>
+                <th class="p-3">Nama Siswa</th>
+                <th class="p-3">Soal Ke</th>
+                <th class="p-3">Durasi</th>
+                <th class="p-3">Indikasi (Pelanggaran)</th>
+                <th class="p-3">Status</th>
+                <th class="p-3 text-center">Aksi / Kontrol</th>
               </tr>
-            `;
-          });
-        });
-    }
-    
+            </thead>
+            <tbody id="monitor-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= TAB 3: RIWAYAT KUIS ================= -->
+    <div id="view-history" class="hidden space-y-6">
+      <div>
+        <h2 class="text-lg font-bold text-green-400 mb-3">📚 Daftar Kuis Tersimpan</h2>
+        <div id="history-quiz-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      </div>
+
+      <div id="history-detail-section" class="hidden bg-gray-900 p-5 rounded-2xl border border-gray-700 mt-6 space-y-4">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-800 pb-3 gap-3">
+          <div>
+            <h3 id="detail-quiz-title" class="text-xl font-bold text-yellow-400">--</h3>
+            <p id="detail-quiz-meta" class="text-xs text-gray-400">--</p>
+          </div>
+          <div class="flex flex-wrap gap-2 w-full md:w-auto">
+            <button onclick="editQuizFromHistory()" class="bg-yellow-600 hover:bg-yellow-700 text-black px-3.5 py-2 rounded-xl text-xs font-bold transition">✏️ Edit Soal</button>
+            <button onclick="deleteCurrentQuiz()" class="bg-red-900/60 hover:bg-red-800 text-red-300 border border-red-700 px-3.5 py-2 rounded-xl text-xs font-bold transition">🗑️ Hapus</button>
+            <button onclick="startQuizFromHistory()" class="bg-green-600 hover:bg-green-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition">🚀 Akses / Mulai</button>
+          </div>
+        </div>
+        <h4 class="text-xs font-bold uppercase text-gray-400 tracking-wider">Hasil Pengerjaan Siswa</h4>
+        <div class="overflow-x-auto rounded-xl border border-gray-800 bg-gray-800/50">
+          <table class="w-full text-left text-sm text-gray-300">
+            <thead class="bg-gray-700 text-xs uppercase text-gray-400">
+              <tr>
+                <th class="p-3">Nama Siswa</th>
+                <th class="p-3">Waktu Selesai</th>
+                <th class="p-3">Durasi</th>
+                <th class="p-3">Keamanan</th>
+                <th class="p-3 text-right">Skor</th>
+              </tr>
+            </thead>
+            <tbody id="detail-history-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL -->
+    <div id="modal-code" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+      <div class="bg-gray-800 p-8 rounded-2xl max-w-md w-full border border-gray-700 text-center space-y-4">
+        <div id="modal-content-arcade" class="hidden">
+          <h3 class="text-2xl font-bold text-blue-400">🎮 Arcade Dibuat!</h3>
+          <div class="bg-gray-900 p-4 rounded-xl border border-dashed border-blue-500 my-4">
+            <span id="display-code-arcade" class="font-mono text-4xl font-extrabold tracking-widest text-blue-400">-----</span>
+          </div>
+        </div>
+        <div id="modal-content-penugasan" class="hidden">
+          <h3 class="text-2xl font-bold text-green-400">📝 Penugasan Dibuat!</h3>
+          <div class="bg-gray-900 p-4 rounded-xl border border-dashed border-green-500 my-4 flex items-center justify-between">
+            <input type="text" id="display-link-penugasan" readonly class="bg-transparent text-green-400 font-mono text-xs w-full outline-none" value="">
+            <button onclick="copyLink()" class="ml-2 bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-xs font-bold">Salin</button>
+          </div>
+        </div>
+        <div class="flex gap-2 pt-2 border-t border-gray-700 mt-4 pt-4">
+          <button onclick="closeModal()" class="flex-1 bg-gray-700 hover:bg-gray-600 py-2 rounded-lg text-xs font-semibold">Tutup</button>
+          <button onclick="startQuizDirectly()" class="flex-1 bg-blue-600 hover:bg-blue-700 py-2 rounded-lg text-xs font-bold text-white">Buka Monitor ➔</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyA7EdhB2ACMwnDE2toXUWcV9xst98nAX40",
       authDomain: "quizit-408f5.firebaseapp.com",
@@ -210,360 +236,481 @@ function fetchLeaderboard() {
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const quizCode = urlParams.get('kode');
+    let currentCreatedCode = null;
+    let currentCreatedMode = null;
+    let currentSelectedQuizCode = null;
+    let activeQuizCode = null;
+    let activeQuizMode = null;
+    let unsubscribeChat = null;
+    let unsubscribeLobby = null;
 
-    let quizData = null;
-    let studentName = "";
-    let currentQuestionIndex = 0;
-    let studentAnswers = {};
-    let flaggedQuestions = {};
-    let studentDocId = null;
-    let timerInterval = null;
-    let secondsElapsed = 0;
-    let isFinished = false;
-
-    if (!quizCode) {
-      alert("Kode kuis tidak valid!");
-      location.href = 'index.html';
-    }
-
-    db.collection("quizzes").doc(quizCode).get().then(doc => {
-      if (!doc.exists) {
-        alert("Kuis tidak ditemukan!");
-        location.href = 'index.html';
-      }
-      quizData = doc.data();
-      document.getElementById('join-quiz-title').innerText = `${quizData.namaQuiz} (${quizData.mode.toUpperCase()})`;
-    });
-
-    let warningCount = 0;
-    window.addEventListener('blur', async () => {
-      if (isFinished || !studentDocId) return;
-
-      isFinished = true;
-      if (timerInterval) clearInterval(timerInterval);
-
-      // Langsung update status terblokir ke database
-      await db.collection("quizzes").doc(quizCode).collection("submissions").doc(studentDocId).update({
-        isBlocked: true,
-        statusIndikator: "TERBLOKIR (Kecurangan ❌)"
-      });
-
-      // Sembunyikan semua layar lain, tampilkan layar khusus blokir
-      document.getElementById('screen-join').classList.add('hidden');
-      document.getElementById('screen-lobby').classList.add('hidden');
-      document.getElementById('screen-quiz').classList.add('hidden');
-      document.getElementById('screen-score').classList.add('hidden');
-      document.getElementById('screen-blocked').classList.remove('hidden');
-    });
-
-    // Pantau Status Kuis Real-time (Aman saat admin menghentikan ujian, langsung ke layar skor)
-    db.collection("quizzes").doc(quizCode).onSnapshot((doc) => {
-      if (!doc.exists) return;
-      const data = doc.data();
-
-      if (data.status === "ended" && !isFinished) {
-        isFinished = true;
-        if (timerInterval) clearInterval(timerInterval);
-        
-        document.getElementById('screen-join').classList.add('hidden');
-        document.getElementById('screen-lobby').classList.add('hidden');
-        document.getElementById('screen-quiz').classList.add('hidden');
-        document.getElementById('screen-score').classList.remove('hidden');
-
-        document.getElementById('score-title-text').innerText = "Ujian Dihentikan Admin";
-        document.getElementById('score-desc-text').innerText = "Pengawas telah mengakhiri sesi ujian ini.";
-        hitungDanTampilkanSkorAkhir();
-        return;
-      }
-
-      if (quizData && quizData.mode === 'arcade' && data.status === 'active' && document.getElementById('screen-lobby').classList.contains('hidden') === false) {
-        document.getElementById('screen-lobby').classList.add('hidden');
-        document.getElementById('screen-quiz').classList.remove('hidden');
-        startTimer();
-        initExambro();
-      }
-    });
-
-    async function joinQuiz() {
-      const nameInput = document.getElementById('student-name-input').value.trim();
-      if (!nameInput) return alert("Masukkan nama lengkapmu terlebih dahulu!");
-      studentName = nameInput;
-
-      const subRef = await db.collection("quizzes").doc(quizCode).collection("submissions").add({
-        nama: studentName,
-        soalKe: 1,
-        durasiDetik: 0,
-        status: "mengerjakan",
-        pernahTerblokir: false,
-        jumlahPelanggaran: 0,
-        statusIndikator: "Aman 🟢",
-        isBlocked: false,
-        jamSelesai: "-"
-      });
-      studentDocId = subRef.id;
-
-      document.getElementById('screen-join').classList.add('hidden');
-
-      if (quizData.mode === 'arcade' && quizData.status === 'waiting') {
-        document.getElementById('screen-lobby').classList.remove('hidden');
-        listenLobbyChat();
+    function verifyAdminPassword() {
+      const pass = document.getElementById('admin-pass-input').value.trim();
+      if (pass === "Andou") {
+        document.getElementById('admin-login-screen').classList.add('hidden');
+        document.getElementById('admin-main-content').classList.remove('hidden');
+        document.body.classList.remove('flex', 'items-center', 'justify-center');
+        addQuestionCard();
+        loadHistoryList();
       } else {
-        document.getElementById('screen-quiz').classList.remove('hidden');
-        startTimer();
-        initExambro();
+        alert("Kata sandi salah! Akses ditolak.");
+        document.getElementById('admin-pass-input').value = "";
       }
     }
 
-    function startTimer() {
-      timerInterval = setInterval(() => {
-        secondsElapsed++;
-        const mins = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
-        const secs = String(secondsElapsed % 60).padStart(2, '0');
-        document.getElementById('timer-display').innerText = `${mins}:${secs}`;
+    document.getElementById('admin-pass-input')?.addEventListener("keyup", e => {
+      if (e.key === "Enter") verifyAdminPassword();
+    });
 
-        if (studentDocId) {
-          db.collection("quizzes").doc(quizCode).collection("submissions").doc(studentDocId).update({
-            durasiDetik: secondsElapsed,
-            soalKe: currentQuestionIndex + 1
-          });
-        }
-      }, 1000);
+    function switchTab(tab) {
+      document.getElementById('view-creator').classList.add('hidden');
+      document.getElementById('view-monitor').classList.add('hidden');
+      document.getElementById('view-history').classList.add('hidden');
+      document.getElementById('tab-btn-creator').className = "flex-1 md:flex-none px-3 py-2 rounded-lg text-xs font-bold transition text-gray-400 hover:text-white";
+      document.getElementById('tab-btn-monitor').className = "flex-1 md:flex-none px-3 py-2 rounded-lg text-xs font-bold transition text-gray-400 hover:text-white";
+      document.getElementById('tab-btn-history').className = "flex-1 md:flex-none px-3 py-2 rounded-lg text-xs font-bold transition text-gray-400 hover:text-white";
+
+      document.getElementById(`view-${tab}`).classList.remove('hidden');
+      document.getElementById(`tab-btn-${tab}`).className = "flex-1 md:flex-none px-3 py-2 rounded-lg text-xs font-bold transition bg-blue-600 text-white";
+      if (tab === 'history') loadHistoryList();
     }
 
-    function listenLobbyChat() {
-      db.collection("quizzes").doc(quizCode).collection("chat").orderBy("waktu").onSnapshot(snapshot => {
-        const box = document.getElementById('lobby-chat-box');
-        box.innerHTML = '';
-        snapshot.forEach(doc => {
-          const d = doc.data();
-          const isMe = d.nama === studentName;
-          box.innerHTML += `
-            <div class="${isMe ? 'text-right' : 'text-left'}">
-              <span class="text-[9px] ${isMe ? 'text-blue-600' : 'text-gray-500'} font-bold block mb-0.5">${d.nama}</span>
-              <div class="inline-block p-1.5 rounded-lg text-xs ${isMe ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800'}">${d.pesan}</div>
-            </div>`;
-        });
-        box.scrollTop = box.scrollHeight;
+    function addQuestionCard(afterCardId = null, existingData = null) {
+      const container = document.getElementById('questions-container');
+      const uniqueId = 'q_' + Math.random().toString(36).substr(2, 9);
+      
+      const qCard = document.createElement('div');
+      qCard.className = "question-card bg-gray-900 p-4 md:p-5 rounded-2xl border border-gray-700 space-y-4 relative shadow-lg";
+      qCard.setAttribute('data-id', uniqueId);
+
+      const qText = existingData ? existingData.pertanyaan : '';
+      const qImg = existingData ? (existingData.gambar || '') : '';
+      const qType = existingData ? existingData.tipe : 'pg';
+
+      qCard.innerHTML = `
+        <div class="flex justify-between items-center border-b border-gray-800 pb-3 gap-2">
+          <span class="question-number font-bold text-blue-400 text-sm">Soal #?</span>
+          <div class="flex items-center gap-1.5">
+            <button onclick="insertQuestionAfter('${uniqueId}')" class="bg-blue-950/80 hover:bg-blue-800 text-blue-300 border border-blue-800 px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1" title="Sisipkan soal di bawah">
+              <span>➕</span> <span class="hidden sm:inline">Sisip</span>
+            </button>
+            <select onchange="changeQuestionType('${uniqueId}', this.value)" class="q-type-select bg-gray-800 border border-gray-600 text-xs text-white p-1.5 md:p-2 rounded-lg font-semibold focus:outline-none">
+              <option value="pg" ${qType==='pg'?'selected':''}>PG (A-E)</option>
+              <option value="pgk" ${qType==='pgk'?'selected':''}>Kompleks (A-E)</option>
+              <option value="bs" ${qType==='bs'?'selected':''}>B / S</option>
+              <option value="uraian" ${qType==='uraian'?'selected':''}>Uraian</option>
+            </select>
+            <button onclick="removeQuestionCard(this)" class="bg-red-950/60 hover:bg-red-800 text-red-400 hover:text-white border border-red-800 px-2 py-1.5 rounded-lg text-xs font-bold transition" title="Hapus Soal">
+              🗑️
+            </button>
+          </div>
+        </div>
+        <textarea rows="2" placeholder="Tuliskan pertanyaan soal..." class="q-text-input w-full p-3 bg-gray-800 border border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">${qText}</textarea>
+        <div>
+          <input type="text" placeholder="🔗 Link Gambar Soal (Opsional)" value="${qImg}" class="q-image-input w-full p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-xs text-blue-300 focus:outline-none">
+        </div>
+        <div class="q-options-area">${renderOptionsHtml(uniqueId, qType, existingData)}</div>
+      `;
+
+      if (afterCardId) {
+        const targetCard = container.querySelector(`[data-id="${afterCardId}"]`);
+        if (targetCard) {
+          container.insertBefore(qCard, targetCard.nextSibling);
+        } else {
+          container.appendChild(qCard);
+        }
+      } else {
+        container.appendChild(qCard);
+      }
+
+      reindexQuestions();
+    }
+
+    function insertQuestionAfter(cardId) { addQuestionCard(cardId); }
+
+    function removeQuestionCard(btn) {
+      const cards = document.querySelectorAll('.question-card');
+      if (cards.length <= 1) return alert("Kuis harus memiliki minimal 1 soal!");
+      const card = btn.closest('.question-card');
+      card.classList.add('deleting');
+      setTimeout(() => { card.remove(); reindexQuestions(); }, 300);
+    }
+
+    function reindexQuestions() {
+      const cards = document.querySelectorAll('.question-card');
+      cards.forEach((card, index) => {
+        const numLabel = card.querySelector('.question-number');
+        if (numLabel) numLabel.innerText = `Soal #${index + 1}`;
       });
     }
 
-    async function sendLobbyMessage() {
-      const input = document.getElementById('lobby-chat-input');
+    // Standar 5 Opsi (A sampai E) untuk PG & PG Kompleks
+    function renderOptionsHtml(uid, type, data = null) {
+      if (type === 'pg') {
+        const opsi = data ? data.opsi : ["", "", "", "", ""];
+        const kunci = data ? data.kunci : 0;
+        return `<div class="space-y-2">${[0,1,2,3,4].map(i => `<div class="flex items-center gap-2"><input type="radio" name="key-${uid}" value="${i}" ${i===kunci?'checked':''} class="w-4 h-4 text-blue-600"><input type="text" id="opt-${uid}-${i}" value="${opsi[i]||''}" placeholder="Pilihan ${String.fromCharCode(65+i)}" class="opt-input w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-xs"></div>`).join('')}</div>`;
+      } else if (type === 'pgk') {
+        const opsi = data ? data.opsi : ["", "", "", "", ""];
+        const kunci = data ? data.kunci : [false, false, false, false, false];
+        return `<div class="space-y-2"><p class="text-[10px] text-yellow-400 font-semibold">* Centang semua pilihan yang menjadi kunci jawaban benar (Kompleks)</p>${[0,1,2,3,4].map(i => `<div class="flex items-center gap-2"><input type="checkbox" id="key-pgk-${uid}-${i}" ${kunci[i]?'checked':''} class="w-4 h-4 text-blue-600"><input type="text" id="opt-${uid}-${i}" value="${opsi[i]||''}" placeholder="Pilihan ${String.fromCharCode(65+i)}" class="opt-input w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-xs"></div>`).join('')}</div>`;
+      } else if (type === 'bs') {
+        const kunci = data ? data.kunci : "Benar";
+        return `<div class="flex gap-4"><label class="flex items-center gap-2 bg-gray-800 p-2.5 rounded-lg border border-gray-700 flex-1 cursor-pointer"><input type="radio" name="key-${uid}" value="Benar" ${kunci==='Benar'?'checked':''} class="w-4 h-4"><span class="text-xs font-semibold text-green-400">BENAR</span></label><label class="flex items-center gap-2 bg-gray-800 p-2.5 rounded-lg border border-gray-700 flex-1 cursor-pointer"><input type="radio" name="key-${uid}" value="Salah" ${kunci==='Salah'?'checked':''} class="w-4 h-4"><span class="text-xs font-semibold text-red-400">SALAH</span></label></div>`;
+      } else if (type === 'uraian') {
+        const kunci = data ? data.kunci : "";
+        return `<input type="text" id="key-uraian-${uid}" value="${kunci}" placeholder="Masukkan Kunci Jawaban..." class="uraian-input w-full p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-xs text-yellow-300 font-semibold">`;
+      }
+    }
+
+    function changeQuestionType(uid, type) {
+      const card = document.querySelector(`[data-id="${uid}"]`);
+      const area = card.querySelector('.q-options-area');
+      area.innerHTML = renderOptionsHtml(uid, type, null);
+    }
+
+    async function saveAndGenerateQuiz() {
+      const title = document.getElementById('quiz-title').value.trim();
+      const mode = document.querySelector('input[name="quiz-mode"]:checked').value;
+      if (!title) return alert("Isikan Judul Kuis!");
+
+      let code = currentSelectedQuizCode;
+      if (!code) {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'; 
+        code = ''; 
+        for (let i=0; i<5; i++) code += chars.charAt(Math.floor(Math.random()*chars.length));
+      }
+      
+      currentCreatedCode = code;
+      currentCreatedMode = mode;
+      const questionsData = [];
+      
+      const cards = document.querySelectorAll('.question-card');
+      if (cards.length === 0) return alert("Minimal 1 soal!");
+
+      cards.forEach((card) => {
+        const qText = card.querySelector('.q-text-input').value.trim();
+        const imgUrl = card.querySelector('.q-image-input').value.trim();
+        const type = card.querySelector('.q-type-select').value;
+        const uid = card.getAttribute('data-id');
+        let opts = [], key = null;
+
+        if (type === 'pg') { 
+          opts = [0,1,2,3,4].map(i => card.querySelector(`#opt-${uid}-${i}`)?.value || ""); 
+          key = parseInt(card.querySelector(`input[name="key-${uid}"]:checked`)?.value || 0); 
+        }
+        else if (type === 'pgk') { 
+          opts = [0,1,2,3,4].map(i => card.querySelector(`#opt-${uid}-${i}`)?.value || ""); 
+          key = [0,1,2,3,4].map(i => card.querySelector(`#key-pgk-${uid}-${i}`)?.checked || false); 
+        }
+        else if (type === 'bs') { 
+          key = card.querySelector(`input[name="key-${uid}"]:checked`)?.value || "Benar"; 
+        }
+        else if (type === 'uraian') { 
+          key = card.querySelector(`.uraian-input`)?.value.trim() || ""; 
+        }
+        questionsData.push({ pertanyaan: qText, gambar: imgUrl, tipe: type, opsi: opts, kunci: key });
+      });
+
+      if (currentSelectedQuizCode) {
+        const batch = db.batch();
+        
+        const subsSnap = await db.collection("quizzes").doc(code).collection("submissions").get();
+        subsSnap.forEach(doc => batch.delete(doc.ref));
+        
+        const chatSnap = await db.collection("quizzes").doc(code).collection("chat").get();
+        chatSnap.forEach(doc => batch.delete(doc.ref));
+        
+        await batch.commit();
+      }
+
+      const initialStatus = mode === 'arcade' ? 'waiting' : 'active';
+
+      await db.collection("quizzes").doc(code).set({
+        namaQuiz: title, kodeQuiz: code, mode: mode, tanggalBuat: new Date().toLocaleDateString('id-ID'), status: initialStatus, soal: questionsData
+      }, { merge: true });
+
+      document.getElementById('modal-content-arcade').classList.add('hidden');
+      document.getElementById('modal-content-penugasan').classList.add('hidden');
+      
+      if(mode === 'arcade') {
+        document.getElementById('display-code-arcade').innerText = code;
+        document.getElementById('modal-content-arcade').classList.remove('hidden');
+      } else {
+        const link = `${window.location.origin}/siswa.html?kode=${code}`;
+        document.getElementById('display-link-penugasan').value = link;
+        document.getElementById('modal-content-penugasan').classList.remove('hidden');
+      }
+      
+      document.getElementById('modal-code').classList.remove('hidden');
+      currentSelectedQuizCode = null;
+    }
+
+    function closeModal() { document.getElementById('modal-code').classList.add('hidden'); }
+    function copyLink() {
+      const linkInput = document.getElementById('display-link-penugasan');
+      linkInput.select();
+      document.execCommand('copy');
+      alert('Link penugasan disalin!');
+    }
+    function startQuizDirectly() { closeModal(); startQuizSession(currentCreatedCode); }
+
+    async function startQuizSession(code) {
+      activeQuizCode = code;
+      const snap = await db.collection("quizzes").doc(code).get();
+      const quizData = snap.data();
+      activeQuizMode = quizData.mode;
+
+      document.getElementById('active-quiz-name').innerText = quizData.namaQuiz;
+      document.getElementById('active-quiz-code-badge').innerText = "Kode: " + code;
+      document.getElementById('active-quiz-mode-badge').innerText = "Mode: " + activeQuizMode;
+      document.getElementById('btn-stop-quiz').classList.remove('hidden');
+
+      switchTab('monitor');
+      
+      document.getElementById('monitor-lobby-section').classList.add('hidden');
+      document.getElementById('monitor-table-section').classList.add('hidden');
+      document.getElementById('btn-start-arcade').classList.add('hidden');
+      document.getElementById('btn-restart-arcade').classList.add('hidden');
+
+      if (unsubscribeChat) unsubscribeChat();
+      if (unsubscribeLobby) unsubscribeLobby();
+
+      if (activeQuizMode === 'arcade') {
+        if (quizData.status === 'waiting') {
+          document.getElementById('monitor-lobby-section').classList.remove('hidden');
+          document.getElementById('btn-start-arcade').classList.remove('hidden');
+        } else {
+          document.getElementById('monitor-table-section').classList.remove('hidden');
+          document.getElementById('btn-restart-arcade').classList.remove('hidden');
+        }
+
+        unsubscribeChat = db.collection("quizzes").doc(code).collection("chat")
+          .orderBy("waktu").onSnapshot((snapshot) => {
+            const chatBox = document.getElementById('chat-box');
+            chatBox.innerHTML = '';
+            snapshot.forEach(doc => {
+              const d = doc.data();
+              const isAdmin = d.nama === 'Admin';
+              chatBox.innerHTML += `
+                <div class="${isAdmin ? 'text-right' : 'text-left'}">
+                  <span class="text-[10px] ${isAdmin ? 'text-blue-400' : 'text-gray-500'} font-bold block mb-0.5">${d.nama}</span>
+                  <div class="inline-block p-2 rounded-lg ${isAdmin ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-200'}">${d.pesan}</div>
+                </div>`;
+            });
+            chatBox.scrollTop = chatBox.scrollHeight;
+          });
+
+        unsubscribeLobby = db.collection("quizzes").doc(code).collection("submissions").onSnapshot((snapshot) => {
+          document.getElementById('lobby-count').innerText = snapshot.size;
+          const list = document.getElementById('lobby-list');
+          list.innerHTML = '';
+          snapshot.forEach(doc => {
+            list.innerHTML += `<div class="bg-gray-800 p-2 rounded border border-gray-700 text-sm font-semibold flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-green-500"></span>${doc.data().nama}</div>`;
+          });
+        });
+      }
+
+      document.getElementById('monitor-table-section').classList.remove('hidden');
+      db.collection("quizzes").doc(code).collection("submissions").onSnapshot((snapshot) => {
+        const tbody = document.getElementById('monitor-table-body');
+        tbody.innerHTML = '';
+        if (snapshot.empty) {
+          tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-gray-500 text-xs">Belum ada siswa...</td></tr>';
+          return;
+        }
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          const id = docSnap.id;
+          const mins = String(Math.floor((data.durasiDetik || 0) / 60)).padStart(2, '0');
+          const secs = String((data.durasiDetik || 0) % 60).padStart(2, '0');
+          let badge = `<span class="text-green-400 font-semibold text-xs">Mengerjakan 🟢</span>`;
+          if (data.isBlocked) badge = `<span class="text-red-400 font-bold text-xs">TERBLOKIR ❌</span>`;
+          else if (data.status === "selesai") badge = `<span class="text-blue-400 font-bold text-xs">Selesai (Skor: ${data.skor})</span>`;
+
+          const indikatorText = data.statusIndikator || (data.pernahTerblokir ? `Pernah ⚠️ (${data.jumlahPelanggaran || 1}x)` : "Aman 🟢");
+
+          tbody.innerHTML += `
+            <tr class="border-b border-gray-800 hover:bg-gray-800/50">
+              <td class="p-3 font-bold text-white">${data.nama}</td>
+              <td class="p-3 text-xs text-gray-300">#${data.soalKe || 1}</td>
+              <td class="p-3 font-mono text-xs text-yellow-400">${mins}:${secs}</td>
+              <td class="p-3 text-xs text-yellow-300 font-medium">${indikatorText}</td>
+              <td class="p-3">${badge}</td>
+              <td class="p-3 text-center space-x-1">
+                ${data.pernahTerblokir ? `<button onclick="resetStudentPenalty('${code}', '${id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded text-xs font-bold transition">Reset Poin</button>` : ''}
+                ${data.isBlocked ? `<button onclick="db.collection('quizzes').doc('${code}').collection('submissions').doc('${id}').update({isBlocked: false})" class="bg-yellow-600 text-black px-2 py-1 rounded text-xs font-bold">Unblock</button>` : ''}
+                <button onclick="db.collection('quizzes').doc('${code}').collection('submissions').doc('${id}').delete()" class="bg-red-600 text-white px-2 py-1 rounded text-xs font-semibold">Kick</button>
+              </td>
+            </tr>`;
+        });
+      });
+    }
+
+    async function startArcadeGame() {
+      if(!activeQuizCode) return;
+      await db.collection("quizzes").doc(activeQuizCode).update({ status: "active" });
+      startQuizSession(activeQuizCode);
+    }
+
+    async function restartArcadeGame() {
+      if(!activeQuizCode) return;
+      if(confirm("Ulangi kuis arcade? Semua siswa akan dikembalikan ke ruang tunggu (lobby) dan data lama serta chat akan dibersihkan.")) {
+        const subsSnap = await db.collection("quizzes").doc(activeQuizCode).collection("submissions").get();
+        const batch1 = db.batch();
+        subsSnap.forEach(doc => batch1.delete(doc.ref));
+        await batch1.commit();
+
+        const chatSnap = await db.collection("quizzes").doc(activeQuizCode).collection("chat").get();
+        const batch2 = db.batch();
+        chatSnap.forEach(doc => batch2.delete(doc.ref));
+        await batch2.commit();
+
+        await db.collection("quizzes").doc(activeQuizCode).update({ status: "waiting" });
+        startQuizSession(activeQuizCode);
+        alert("Kuis di-reset! Siswa dapat bergabung kembali ke lobby.");
+      }
+    }
+
+    async function sendAdminMessage() {
+      const input = document.getElementById('chat-input');
       const msg = input.value.trim();
-      if (!msg) return;
-      await db.collection("quizzes").doc(quizCode).collection("chat").add({
-        nama: studentName, pesan: msg, waktu: firebase.firestore.FieldValue.serverTimestamp()
+      if (!msg || !activeQuizCode) return;
+      await db.collection("quizzes").doc(activeQuizCode).collection("chat").add({
+        nama: "Admin", pesan: msg, waktu: firebase.firestore.FieldValue.serverTimestamp()
       });
       input.value = '';
     }
-    document.getElementById('lobby-chat-input')?.addEventListener("keyup", e => { if(e.key === "Enter") sendLobbyMessage(); });
+    document.getElementById('chat-input')?.addEventListener("keyup", e => { if (e.key === "Enter") sendAdminMessage(); });
 
-    function initExambro() {
-      document.getElementById('exambro-quiz-title').innerText = quizData.namaQuiz;
-      renderQuestionGrid();
-      renderQuestion();
-    }
-
-    function renderQuestionGrid() {
-      const grid = document.getElementById('question-grid');
-      grid.innerHTML = '';
-      quizData.soal.forEach((_, idx) => {
-        let btnColor = "bg-gray-200 text-gray-700 hover:bg-gray-300";
-        
-        const ans = studentAnswers[idx];
-        const isAnswered = ans !== undefined && (Array.isArray(ans) ? ans.some(Boolean) : ans !== "");
-        
-        if (isAnswered) {
-          btnColor = "bg-blue-600 text-white hover:bg-blue-700";
-        }
-        if (flaggedQuestions[idx]) {
-          btnColor = "bg-yellow-500 text-white hover:bg-yellow-600";
-        }
-        if (currentQuestionIndex === idx) {
-          btnColor += " ring-2 ring-offset-2 ring-blue-500 font-bold";
-        }
-
-        grid.innerHTML += `
-          <button onclick="goToQuestion(${idx})" class="w-9 h-9 rounded-lg text-xs font-bold transition flex items-center justify-center relative ${btnColor}">
-            ${idx + 1}
-            ${flaggedQuestions[idx] ? '<span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-600 rounded-full border border-white"></span>' : ''}
-          </button>`;
-      });
-    }
-
-    function renderQuestion() {
-      const q = quizData.soal[currentQuestionIndex];
-      document.getElementById('quiz-question-number').innerText = `Soal No. ${currentQuestionIndex + 1} dari ${quizData.soal.length}`;
-      document.getElementById('question-text').innerText = q.pertanyaan;
-
-      const badgeRagu = document.getElementById('badge-ragu');
-      if (flaggedQuestions[currentQuestionIndex]) {
-        badgeRagu.classList.remove('hidden');
-      } else {
-        badgeRagu.classList.add('hidden');
-      }
-
-      const imgContainer = document.getElementById('question-image-container');
-      const imgEl = document.getElementById('question-image');
-      if (q.gambar && q.gambar.trim() !== "") {
-        imgEl.src = q.gambar;
-        imgContainer.classList.remove('hidden');
-      } else {
-        imgContainer.classList.add('hidden');
-      }
-
-      const optArea = document.getElementById('options-container');
-      optArea.innerHTML = '';
-
-      const opsiList = q.opsi && q.opsi.length > 0 ? q.opsi : ["Pilihan A", "Pilihan B", "Pilihan C", "Pilihan D", "Pilihan E"];
-
-      // 1. Pilihan Ganda Biasa (A-E)
-      if (q.tipe === 'pg') {
-        opsiList.forEach((opt, idx) => {
-          const isChecked = studentAnswers[currentQuestionIndex] === idx ? 'checked' : '';
-          optArea.innerHTML += `
-            <label class="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-xl cursor-pointer hover:border-blue-500 transition">
-              <input type="radio" name="ans" value="${idx}" ${isChecked} onchange="saveAnswer(${idx})" class="w-4 h-4 text-blue-600">
-              <span class="text-xs md:text-sm font-semibold text-gray-700"><strong class="mr-2">${String.fromCharCode(65+idx)}.</strong> ${opt}</span>
-            </label>`;
-        });
-      } 
-      // 2. Pilihan Ganda Kompleks (A-E, Multi-Checkbox)
-      else if (q.tipe === 'pgk') {
-        if (!Array.isArray(studentAnswers[currentQuestionIndex])) {
-          studentAnswers[currentQuestionIndex] = [false, false, false, false, false];
-        }
-        opsiList.forEach((opt, idx) => {
-          const isChecked = studentAnswers[currentQuestionIndex][idx] ? 'checked' : '';
-          optArea.innerHTML += `
-            <label class="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-xl cursor-pointer hover:border-blue-500 transition">
-              <input type="checkbox" id="pgk-opt-${idx}" ${isChecked} onchange="saveComplexAnswer(${idx})" class="w-4 h-4 text-blue-600 rounded">
-              <span class="text-xs md:text-sm font-semibold text-gray-700"><strong class="mr-2">${String.fromCharCode(65+idx)}.</strong> ${opt}</span>
-            </label>`;
-        });
-      } 
-      // 3. Benar / Salah
-      else if (q.tipe === 'bs') {
-        const currentAns = studentAnswers[currentQuestionIndex];
-        optArea.innerHTML = `
-          <div class="flex gap-4">
-            <label class="flex items-center justify-center gap-2 p-3 bg-gray-50 border border-gray-200 rounded-xl flex-1 cursor-pointer hover:border-green-500 transition">
-              <input type="radio" name="ans" value="Benar" ${currentAns==='Benar'?'checked':''} onchange="saveAnswer('Benar')" class="w-4 h-4">
-              <span class="text-xs md:text-sm font-bold text-green-600">BENAR</span>
-            </label>
-            <label class="flex items-center justify-center gap-2 p-3 bg-gray-50 border border-gray-200 rounded-xl flex-1 cursor-pointer hover:border-red-500 transition">
-              <input type="radio" name="ans" value="Salah" ${currentAns==='Salah'?'checked':''} onchange="saveAnswer('Salah')" class="w-4 h-4">
-              <span class="text-xs md:text-sm font-bold text-red-600">SALAH</span>
-            </label>
-          </div>`;
-      } 
-      // 4. Uraian
-      else if (q.tipe === 'uraian') {
-        const val = studentAnswers[currentQuestionIndex] || '';
-        optArea.innerHTML = `<input type="text" id="uraian-ans" value="${val}" oninput="saveAnswer(this.value)" placeholder="Ketik jawaban kamu di sini..." class="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl text-xs md:text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500">`;
-      }
-
-      if (currentQuestionIndex > 0) {
-        document.getElementById('btn-prev').classList.remove('hidden');
-      } else {
-        document.getElementById('btn-prev').classList.add('hidden');
-      }
-
-      renderQuestionGrid();
-    }
-
-    function saveAnswer(val) {
-      studentAnswers[currentQuestionIndex] = val;
-      renderQuestionGrid();
-    }
-
-    function saveComplexAnswer(idx) {
-      if (!Array.isArray(studentAnswers[currentQuestionIndex])) {
-        studentAnswers[currentQuestionIndex] = [false, false, false, false, false];
-      }
-      const isChecked = document.getElementById(`pgk-opt-${idx}`).checked;
-      studentAnswers[currentQuestionIndex][idx] = isChecked;
-      renderQuestionGrid();
-    }
-
-    function toggleRaguRagu() {
-      flaggedQuestions[currentQuestionIndex] = !flaggedQuestions[currentQuestionIndex];
-      renderQuestion();
-    }
-
-    function prevQuestion() {
-      if (currentQuestionIndex > 0) {
-        currentQuestionIndex--;
-        renderQuestion();
+    async function stopActiveQuiz() {
+      if (!activeQuizCode) return;
+      if (confirm("Hentikan ujian?")) {
+        await db.collection("quizzes").doc(activeQuizCode).update({ status: "ended" });
+        alert("Ujian berhasil dihentikan!");
+        activeQuizCode = null;
+        document.getElementById('active-quiz-name').innerText = "Belum Ada Kuis Aktif";
+        document.getElementById('active-quiz-code-badge').innerText = "Kode: -";
+        document.getElementById('active-quiz-mode-badge').innerText = "Mode: -";
+        document.getElementById('btn-stop-quiz').classList.add('hidden');
+        document.getElementById('monitor-lobby-section').classList.add('hidden');
+        document.getElementById('monitor-table-section').classList.add('hidden');
+        switchTab('history');
       }
     }
 
-    function nextQuestion() {
-      if (currentQuestionIndex < quizData.soal.length - 1) {
-        currentQuestionIndex++;
-        renderQuestion();
-      } else {
-        alert("Ini adalah soal terakhir. Silakan klik tombol 'Selesaikan Ujian' di panel kanan jika sudah selesai.");
-      }
-    }
-
-    function goToQuestion(idx) {
-      currentQuestionIndex = idx;
-      renderQuestion();
-    }
-
-    async function submitQuiz() {
-      if (isFinished) return;
-      if (!confirm("Yakin ingin menyelesaikan dan mengirim jawaban ujian?")) return;
-
-      isFinished = true;
-      if (timerInterval) clearInterval(timerInterval);
-
-      hitungDanTampilkanSkorAkhir();
-    }
-
-    async function hitungDanTampilkanSkorAkhir() {
-      let score = 0;
-      const totalSoal = quizData.soal.length;
-      const bobot = 100 / totalSoal;
-
-      quizData.soal.forEach((q, idx) => {
-        const studentAns = studentAnswers[idx];
-        if (studentAns !== undefined) {
-          if (q.tipe === 'pg' && studentAns === q.kunci) {
-            score += bobot;
-          } else if (q.tipe === 'pgk') {
-            // Bandingkan array boolean jawaban siswa dengan kunci jawaban admin
-            if (JSON.stringify(studentAns) === JSON.stringify(q.kunci)) {
-              score += bobot;
-            }
-          } else if (q.tipe === 'bs' && studentAns === q.kunci) {
-            score += bobot;
-          } else if (q.tipe === 'uraian' && String(studentAns).trim().toLowerCase() === String(q.kunci).trim().toLowerCase()) {
-            score += bobot;
-          }
-        }
-      });
-
-      const finalScore = Math.round(score);
-      const jamSelesaiStr = new Date().toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'});
-
-      if (studentDocId) {
+    async function resetStudentPenalty(quizCode, studentDocId) {
+      if (confirm("Reset catatan pelanggaran dan kembalikan poin/penalti siswa ini?")) {
         await db.collection("quizzes").doc(quizCode).collection("submissions").doc(studentDocId).update({
-          status: "selesai",
-          skor: finalScore,
-          durasiDetik: secondsElapsed,
-          jamSelesai: jamSelesaiStr,
-          statusIndikator: "Selesai Bersih 🟢"
+          pernahTerblokir: false,
+          jumlahPelanggaran: 0,
+          statusIndikator: "Aman Bersih 🟢"
         });
+        alert("Pelanggaran & poin siswa berhasil direset oleh Admin!");
+      }
+    }
+
+    function loadHistoryList() {
+      db.collection("quizzes").onSnapshot((snapshot) => {
+        const container = document.getElementById('history-quiz-list');
+        container.innerHTML = '';
+        if (snapshot.empty) return container.innerHTML = '<p class="text-xs text-gray-400">Belum ada kuis yang dibuat.</p>';
+
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          const code = docSnap.id;
+          const statusColor = data.status === 'active' ? 'bg-green-900 text-green-300' : (data.status === 'waiting' ? 'bg-blue-900 text-blue-300' : 'bg-gray-800 text-gray-400');
+          
+          container.innerHTML += `
+            <div class="bg-gray-900 p-4 rounded-xl border border-gray-700 flex justify-between items-center cursor-pointer hover:border-blue-500 transition group" onclick="showHistoryDetail('${code}')">
+              <div>
+                <h4 class="font-bold text-white text-base group-hover:text-blue-400 transition">${data.namaQuiz} <span class="text-[10px] text-gray-500 ml-1">(${data.mode})</span></h4>
+                <p class="text-xs text-gray-400 mt-0.5">Dibuat: ${data.tanggalBuat} | Kode: <span class="text-yellow-400 font-mono font-bold">${code}</span></p>
+                <span class="inline-block mt-2 text-[10px] px-2 py-0.5 rounded font-bold uppercase ${statusColor}">Status: ${data.status}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="event.stopPropagation(); deleteQuiz('${code}')" class="p-2 bg-red-950/60 hover:bg-red-800 text-red-400 hover:text-white rounded-lg border border-red-800/60 text-xs transition">🗑️</button>
+                <span class="text-gray-500 text-lg group-hover:translate-x-1 transition">➔</span>
+              </div>
+            </div>`;
+        });
+      });
+    }
+
+    async function showHistoryDetail(code) {
+      currentSelectedQuizCode = code;
+      const docSnap = await db.collection("quizzes").doc(code).get();
+      if (!docSnap.exists) return document.getElementById('history-detail-section').classList.add('hidden');
+      const data = docSnap.data();
+
+      document.getElementById('detail-quiz-title').innerText = data.namaQuiz;
+      document.getElementById('detail-quiz-meta').innerText = `Kode: ${code} | Mode: ${data.mode} | Tanggal: ${data.tanggalBuat}`;
+      document.getElementById('history-detail-section').classList.remove('hidden');
+
+      db.collection("quizzes").doc(code).collection("submissions").onSnapshot((snapshot) => {
+        const tbody = document.getElementById('detail-history-table-body');
+        tbody.innerHTML = '';
+        if (snapshot.empty) return tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500 text-xs">Belum ada riwayat siswa.</td></tr>';
+        
+        snapshot.forEach((sSnap) => {
+          const sData = sSnap.data();
+          const mins = String(Math.floor((sData.durasiDetik || 0) / 60)).padStart(2, '0');
+          const secs = String((sData.durasiDetik || 0) % 60).padStart(2, '0');
+          tbody.innerHTML += `
+            <tr class="border-b border-gray-800 hover:bg-gray-800/40">
+              <td class="p-3 font-bold text-white">${sData.nama}</td>
+              <td class="p-3 text-xs text-gray-400">${sData.jamSelesai || '-'}</td>
+              <td class="p-3 font-mono text-xs text-yellow-400">${mins}:${secs}</td>
+              <td class="p-3 text-xs ${sData.pernahTerblokir ? 'text-red-400 font-bold' : 'text-green-400'}">${sData.pernahTerblokir ? `Pernah ⚠️ (${sData.jumlahPelanggaran || 1}x)` : 'Aman 🟢'}</td>
+              <td class="p-3 text-right font-extrabold text-green-400 text-base">${sData.skor ?? 0}</td>
+            </tr>`;
+        });
+      });
+    }
+
+    async function editQuizFromHistory() {
+      if (!currentSelectedQuizCode) return;
+      const docSnap = await db.collection("quizzes").doc(currentSelectedQuizCode).get();
+      if (!docSnap.exists) return alert("Kuis tidak ditemukan!");
+      const data = docSnap.data();
+
+      if (!confirm("⚠️ PERINGATAN: Mengedit soal akan MERESET/MENHAPUS semua data pengerjaan nilai dan chat siswa yang sudah masuk untuk kuis ini. Lanjutkan?")) {
+        return;
       }
 
-      document.getElementById('screen-quiz').classList.add('hidden');
-      document.getElementById('screen-score').classList.remove('hidden');
-      document.getElementById('final-score-value').innerText = finalScore;
+      document.getElementById('quiz-title').value = data.namaQuiz;
+      const modeRadios = document.querySelectorAll('input[name="quiz-mode"]');
+      modeRadios.forEach(r => { if (r.value === data.mode) r.checked = true; });
+
+      document.getElementById('questions-container').innerHTML = '';
+      if (data.soal && data.soal.length > 0) {
+        data.soal.forEach(s => {
+          addQuestionCard(null, s);
+        });
+      } else {
+        addQuestionCard();
+      }
+
+      switchTab('creator');
+      alert(`Silakan edit soal untuk kuis "${data.namaQuiz}". Data siswa lama akan direset setelah Anda menekan tombol "Simpan Kuis".`);
     }
+
+    async function deleteQuiz(code) {
+      if (confirm(`Hapus permanen kuis (${code})?`)) {
+        try {
+          const subsSnap = await db.collection("quizzes").doc(code).collection("submissions").get();
+          const batch1 = db.batch(); subsSnap.forEach(doc => batch1.delete(doc.ref)); await batch1.commit();
+          
+          const chatSnap = await db.collection("quizzes").doc(code).collection("chat").get();
+          const batch2 = db.batch(); chatSnap.forEach(doc => batch2.delete(doc.ref)); await batch2.commit();
+
+          await db.collection("quizzes").doc(code).delete();
+          if (currentSelectedQuizCode === code) document.getElementById('history-detail-section').classList.add('hidden');
+        } catch (err) { alert("Gagal menghapus: " + err.message); }
+      }
+    }
+    function deleteCurrentQuiz() { if (currentSelectedQuizCode) deleteQuiz(currentSelectedQuizCode); }
+    function startQuizFromHistory() { if (currentSelectedQuizCode) startQuizSession(currentSelectedQuizCode); }
   </script>
 </body>
 </html>
