@@ -538,6 +538,7 @@
               <td class="p-3 text-xs text-yellow-300 font-medium">${indikatorText}</td>
               <td class="p-3">${badge}</td>
               <td class="p-3 text-center space-x-1">
+                ${data.pernahTerblokir ? `<button onclick="resetStudentPenalty('${code}', '${id}')" class="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1 rounded text-xs font-bold transition">Reset Poin</button>` : ''}
                 ${data.isBlocked ? `<button onclick="db.collection('quizzes').doc('${code}').collection('submissions').doc('${id}').update({isBlocked: false, statusIndikator: 'Aman 🟢'})" class="bg-yellow-600 text-black px-2 py-1 rounded text-xs font-bold">Unblock</button>` : ''}
                 <button onclick="db.collection('quizzes').doc('${code}').collection('submissions').doc('${id}').delete()" class="bg-red-600 text-white px-2 py-1 rounded text-xs font-semibold">Kick</button>
               </td>
@@ -568,6 +569,18 @@
         await db.collection("quizzes").doc(activeQuizCode).update({ status: "waiting" });
         startQuizSession(activeQuizCode);
         alert("Kuis di-reset! Siswa dapat bergabung kembali ke lobby.");
+      }
+    }
+
+    async function resetStudentPenalty(quizCode, studentDocId) {
+      if (confirm("Reset catatan pelanggaran dan pulihkan status siswa ini?")) {
+        await db.collection("quizzes").doc(quizCode).collection("submissions").doc(studentDocId).update({
+          pernahTerblokir: false,
+          jumlahPelanggaran: 0,
+          isBlocked: false,
+          statusIndikator: "Aman Bersih 🟢"
+        });
+        alert("Status pelanggaran siswa berhasil direset oleh Admin!");
       }
     }
 
