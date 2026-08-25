@@ -218,7 +218,7 @@ function fetchLeaderboard() {
       quizData = doc.data();
       document.getElementById('join-quiz-title').innerText = `${quizData.namaQuiz} (${quizData.mode.toUpperCase()})`;
     });
-    
+
     window.addEventListener('blur', async () => {
       if (isFinished || !studentDocId) return;
       warningCount++;
