@@ -218,8 +218,7 @@ function fetchLeaderboard() {
       quizData = doc.data();
       document.getElementById('join-quiz-title').innerText = `${quizData.namaQuiz} (${quizData.mode.toUpperCase()})`;
     });
-// ================= MATIKAN SEMENTARA UNTUK TESTING =================
-    /*
+    
     window.addEventListener('blur', async () => {
       if (isFinished || !studentDocId) return;
       warningCount++;
@@ -239,8 +238,6 @@ function fetchLeaderboard() {
         alert("PERINGATAN PELANGGARAN (" + warningCount + "/2): Jangan meninggalkan halaman ujian atau Anda akan diblokir!");
       }
     });
-    */
-    // ===================================================================
 
     // Pantau Status Kuis Real-time (Aman saat admin menghentikan ujian, langsung ke layar skor)
     db.collection("quizzes").doc(quizCode).onSnapshot((doc) => {
