@@ -536,7 +536,7 @@
 
     async function submitQuiz() {
       if (isFinished) return;
-      if (!confirm("Yakin ingin menyelesaikan dan mengirim jawaban ujian?")) return;
+      // Konfirmasi alert dihapus, langsung proses pengiriman jawaban secara instan
 
       isFinished = true;
       if (timerInterval) clearInterval(timerInterval);
