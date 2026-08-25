@@ -152,12 +152,12 @@
     <div class="w-16 h-16 bg-red-600 rounded-2xl mx-auto flex items-center justify-center text-3xl shadow-md text-white font-bold">🚫</div>
     <div>
       <h2 class="text-2xl font-black text-red-600">OOWWWWW!</h2>
-      <p class="text-xs text-gray-500 mt-1 font-medium">Sistem mendeteksi adanya perilaku anomali yang terjadi (pindah tab, Asisten, atau keluar dari halaman ujian).</p>
+      <p class="text-xs text-gray-500 mt-1 font-medium">Sistem mendeteksi adanya perilaku anomali (pindah tab atau keluar dari halaman ujian).</p>
     </div>
     
     <div class="bg-red-50 p-4 rounded-xl border border-red-200">
-      <span class="text-lg font-black text-red-700">Status Akses:</span>
-      <span class="text-xs text-red-600 font-bold block">Pengerjaan terkunci, silahkan melapor pada Pengawas untuk verifikasi!</span>
+      <span class="text-xs text-red-600 font-bold block">Status Akses:</span>
+      <span class="text-lg font-black text-red-700">Pengerjaan terkunci seketika, silahkan melapor pada Pengawas untuk verifikasi!</span>
     </div>
   </div>
 
@@ -187,7 +187,7 @@
     let timerInterval = null;
     let secondsElapsed = 0;
     let isFinished = false;
-    let warningCount = 0;
+    let hasBeenBlocked = false;
 
     if (!quizCode) {
       alert("Kode kuis tidak valid!");
@@ -234,11 +234,10 @@
         });
     }
 
-    // 2. FUNGSI PANTAU STATUS SISWA (Mendengar Kick, Unblock, atau Admin Hentikan Ujian)
+    // 2. FUNGSI PANTAU STATUS SISWA (Mendengar Kick, Unblock 1-Klik, atau Admin Hentikan Ujian)
     function listenStudentStatus() {
       if (!studentDocId) return;
       
-      // Pantau dokumen data siswa sendiri (untuk Kick / Unblock)
       db.collection("quizzes").doc(quizCode).collection("submissions").doc(studentDocId)
         .onSnapshot((doc) => {
           if (!doc.exists) {
@@ -248,7 +247,10 @@
           }
 
           const data = doc.data();
-          if (data.isBlocked === false && !document.getElementById('screen-blocked').classList.contains('hidden')) {
+
+          // Respon Unblock 1-klik yang mulus
+          if (data.isBlocked === false && hasBeenBlocked) {
+            hasBeenBlocked = false;
             alert("Status blokir Anda telah dicabut oleh pengawas. Silakan melanjutkan ujian.");
             document.getElementById('screen-blocked').classList.add('hidden');
             
@@ -259,7 +261,7 @@
         });
     }
 
-    // 3. PANTAU STATUS KUIS GLOBAL (Auto-Stop saat Admin Hentikan Ujian - aktif di semua layar termasuk screen-blocked)
+    // 3. PANTAU STATUS KUIS GLOBAL (Auto-Stop saat Admin Hentikan Ujian)
     db.collection("quizzes").doc(quizCode).onSnapshot((doc) => {
       if (!doc.exists) return;
       const data = doc.data();
@@ -288,32 +290,26 @@
       }
     });
 
-    // SISTEM KEAMANAN TEGAS (MENCATAT PELANGGARAN & POTONG NILAI)
+    // SISTEM KEAMANAN TEGAS (1x KECURANGAN LANGSUNG BLOKIR TANPA PERINGATAN)
     window.addEventListener('blur', async () => {
-      if (isFinished || !studentDocId) return;
+      if (isFinished || !studentDocId || hasBeenBlocked) return;
 
-      warningCount++;
+      hasBeenBlocked = true;
+      isFinished = true;
+      if (timerInterval) clearInterval(timerInterval);
+
       await db.collection("quizzes").doc(quizCode).collection("submissions").doc(studentDocId).update({
         pernahTerblokir: true,
-        jumlahPelanggaran: warningCount,
-        statusIndikator: `Pernah Pindah Tab ⚠️ (${warningCount}x)`
+        jumlahPelanggaran: 1,
+        isBlocked: true,
+        statusIndikator: "TERBLOKIR (Kecurangan ❌)"
       });
 
-      if (warningCount >= 2) {
-        isFinished = true;
-        if (timerInterval) clearInterval(timerInterval);
-
-        await db.collection("quizzes").doc(quizCode).collection("submissions").doc(studentDocId).update({
-          isBlocked: true,
-          statusIndikator: "TERBLOKIR (Kecurangan ❌)"
-        });
-
-        document.getElementById('screen-join').classList.add('hidden');
-        document.getElementById('screen-lobby').classList.add('hidden');
-        document.getElementById('screen-quiz').classList.add('hidden');
-        document.getElementById('screen-score').classList.add('hidden');
-        document.getElementById('screen-blocked').classList.remove('hidden');
-      }
+      document.getElementById('screen-join').classList.add('hidden');
+      document.getElementById('screen-lobby').classList.add('hidden');
+      document.getElementById('screen-quiz').classList.add('hidden');
+      document.getElementById('screen-score').classList.add('hidden');
+      document.getElementById('screen-blocked').classList.remove('hidden');
     });
 
     async function joinQuiz() {
@@ -571,7 +567,8 @@
         }
       });
 
-      let penaltyDeduction = warningCount * 10;
+      // PENALTI BERBASIS PERSENTASE (10% dari total skor murni per pelanggaran)
+      let penaltyDeduction = hasBeenBlocked ? Math.round(rawScore * 0.10) : 0;
       let finalScore = Math.round(rawScore) - penaltyDeduction;
       if (finalScore < 0) finalScore = 0;
 
@@ -583,7 +580,7 @@
           skor: finalScore,
           durasiDetik: secondsElapsed,
           jamSelesai: jamSelesaiStr,
-          statusIndikator: warningCount > 0 ? `Selesai (Penalti ${warningCount}x)` : "Selesai Bersih 🟢"
+          statusIndikator: hasBeenBlocked ? "Selesai (Penalti 10%)" : "Selesai Bersih 🟢"
         });
       }
 
@@ -592,9 +589,9 @@
       document.getElementById('screen-score').classList.remove('hidden');
       document.getElementById('final-score-value').innerText = finalScore;
 
-      if (warningCount > 0) {
+      if (hasBeenBlocked) {
         const penaltyEl = document.getElementById('penalty-info');
-        penaltyEl.innerText = `⚠️ Skor dipotong ${penaltyDeduction} poin (${warningCount}x terdeteksi pindah tab)`;
+        penaltyEl.innerText = `⚠️ Skor dipotong 10% (${penaltyDeduction} poin) karena terdeteksi kecurangan/pindah tab`;
         penaltyEl.classList.remove('hidden');
       }
 
