@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuizIT - Ruang Tunggu</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Firebase SDK Compat -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <link rel="icon" type="image/png" href="logo.webp">
+</head>
+<body class="bg-gray-100 text-gray-800 min-h-screen flex items-center justify-center p-3 md:p-6 font-sans select-none">
+
+  <!-- ================= LAYAR 1: MASUKKAN NAMA ================= -->
+  <div id="screen-join" class="max-w-md w-full bg-white p-8 rounded-2xl border border-gray-200 shadow-xl text-center space-y-6">
+    <div class="w-14 h-14 bg-blue-600 rounded-2xl mx-auto flex items-center justify-center text-2xl shadow-md text-white font-bold">🎓</div>
+    <div>
+      <h1 class="text-2xl font-black text-[#1e1b4b]">Bergabung ke Ujian</h1>
+      <p id="join-quiz-title" class="text-xs text-blue-600 font-bold mt-1">Memuat informasi kuis...</p>
+    </div>
+
+    <div class="space-y-4 text-left">
+      <div>
+        <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Nama Lengkap Siswa</label>
+        <input type="text" id="student-name-input" placeholder="Masukkan nama kamu..." class="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-medium">
+      </div>
+    </div>
+
+    <button onclick="joinQuiz()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-extrabold transition shadow-lg text-sm">Masuk Ruang Tunggu ➔</button>
+    <a href="index.html" class="block text-xs text-gray-400 hover:text-gray-600 pt-2 font-medium">← Kembali ke Beranda</a>
+  </div>
+
+  <!-- ================= LAYAR 2: LOBBY TUNGGU (CHAT) ================= -->
+  <div id="screen-lobby" class="hidden max-w-lg w-full bg-white p-8 rounded-2xl border border-gray-200 shadow-xl text-center space-y-6">
+    <div class="w-14 h-14 bg-orange-500 rounded-2xl mx-auto flex items-center justify-center text-2xl shadow-md text-white animate-pulse">⏳</div>
+    <div>
+      <h2 class="text-2xl font-black text-[#1e1b4b]">Menunggu Pengawas Memulai...</h2>
+      <p class="text-xs text-gray-500 mt-1 font-medium">Kamu sudah berada di ruang tunggu. Ngobrol dulu yuk di chat bawah!</p>
+    </div>
+
+    <div class="bg-gray-50 rounded-xl border border-gray-200 flex flex-col h-64 text-left">
+      <div class="p-3 border-b border-gray-200 bg-white rounded-t-xl text-xs font-bold text-blue-600">💬 Ruang Obrolan Kelas</div>
+      <div id="lobby-chat-box" class="flex-1 p-3 overflow-y-auto space-y-2 flex flex-col text-xs"></div>
+      <div class="p-2 border-t border-gray-200 flex gap-2">
+        <input type="text" id="lobby-chat-input" placeholder="Ketik pesan..." class="flex-1 bg-white border border-gray-300 rounded-lg p-2 text-xs text-gray-800 focus:outline-none">
+        <button onclick="sendLobbyMessage()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs">Kirim</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyA7EdhB2ACMwnDE2toXUWcV9xst98nAX40",
+      authDomain: "quizit-408f5.firebaseapp.com",
+      projectId: "quizit-408f5",
+      storageBucket: "quizit-408f5.firebasestorage.app",
+      messagingSenderId: "28506740490",
+      appId: "1:28506740490:web:3925477a3b195c81a20cf3"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const quizCode = urlParams.get('kode');
+
+    let quizData = null;
+    let studentName = "";
+    let studentDocId = null;
+
+    if (!quizCode) {
+      alert("Kode kuis tidak valid!");
+      location.href = 'index.html';
+    }
+
+    db.collection("quizzes").doc(quizCode).get().then(doc => {
+      if (!doc.exists) {
+        alert("Kuis tidak ditemukan!");
+        location.href = 'index.html';
+      }
+      quizData = doc.data();
+      document.getElementById('join-quiz-title').innerText = `${quizData.namaQuiz} (${quizData.mode.toUpperCase()})`;
+      
+      // Jika mode penugasan (bukan arcade), langsung lempar ke halaman ujian
+      if (quizData.mode === 'penugasan') {
+        // Otomatis daftarkan langsung lalu ke siswa.html
+      }
+    });
+
+    async function joinQuiz() {
+      const nameInput = document.getElementById('student-name-input').value.trim();
+      if (!nameInput) return alert("Masukkan nama lengkapmu terlebih dahulu!");
+      studentName = nameInput;
+
+      const subRef = await db.collection("quizzes").doc(quizCode).collection("submissions").add({
+        nama: studentName,
+        soalKe: 1,
+        durasiDetik: 0,
+        status: "mengerjakan",
+        jumlahPelanggaran: 0,
+        statusIndikator: "Aman 🟢",
+        isBlocked: false,
+        jamSelesai: "-"
+      });
+      studentDocId = subRef.id;
+
+      document.getElementById('screen-join').classList.add('hidden');
+
+      if (quizData.mode === 'arcade' && quizData.status === 'waiting') {
+        document.getElementById('screen-lobby').classList.remove('hidden');
+        listenLobbyChat();
+        listenGlobalQuizStatus();
+        listenStudentStatus();
+      } else {
+        // Langsung pindah ke halaman ujian
+        location.href = `siswa.html?kode=${quizCode}&id=${studentDocId}&nama=${encodeURIComponent(studentName)}`;
+      }
+    }
+
+    function listenStudentStatus() {
+      if (!studentDocId) return;
+      db.collection("quizzes").doc(quizCode).collection("submissions").doc(studentDocId)
+        .onSnapshot((doc) => {
+          if (!doc.exists) {
+            alert("⚠️ Anda telah dikeluarkan (kick) dari sesi ujian oleh pengawas.");
+            location.href = 'index.html';
+          }
+        });
+    }
+
+    function listenGlobalQuizStatus() {
+      db.collection("quizzes").doc(quizCode).onSnapshot((doc) => {
+        if (!doc.exists) return;
+        const data = doc.data();
+        // Jika admin klik Mulai Permainan (status jadi active)
+        if (data.status === 'active') {
+          location.href = `siswa.html?kode=${quizCode}&id=${studentDocId}&nama=${encodeURIComponent(studentName)}`;
+        }
+      });
+    }
+
+    function listenLobbyChat() {
+      db.collection("quizzes").doc(quizCode).collection("chat").orderBy("waktu").onSnapshot(snapshot => {
+        const box = document.getElementById('lobby-chat-box');
+        box.innerHTML = '';
+        snapshot.forEach(doc => {
+          const d = doc.data();
+          const isMe = d.nama === studentName;
+          box.innerHTML += `
+            <div class="${isMe ? 'text-right' : 'text-left'}">
+              <span class="text-[9px] ${isMe ? 'text-blue-600' : 'text-gray-500'} font-bold block mb-0.5">${d.nama}</span>
+              <div class="inline-block p-1.5 rounded-lg text-xs ${isMe ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800'}">${d.pesan}</div>
+            </div>`;
+        });
+        box.scrollTop = box.scrollHeight;
+      });
+    }
+
+    async function sendLobbyMessage() {
+      const input = document.getElementById('lobby-chat-input');
+      const msg = input.value.trim();
+      if (!msg) return;
+      await db.collection("quizzes").doc(quizCode).collection("chat").add({
+        nama: studentName, pesan: msg, waktu: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      input.value = '';
+    }
+    document.getElementById('lobby-chat-input')?.addEventListener("keyup", e => { if(e.key === "Enter") sendLobbyMessage(); });
+  </script>
+</body>
+</html>
