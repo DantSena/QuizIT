@@ -51,7 +51,7 @@
   </div>
 
   <!-- ================= LAYAR 3: UTAMA EXAMBRO ================= -->
-  <div id="screen-quiz" class="hidden max-w-4xl w-full space-y-4">
+  <div id="screen-quiz" class="max-w-4xl w-full space-y-4" style="display: none;">
     
     <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row justify-between items-center gap-3">
       <div>
@@ -249,8 +249,8 @@
 
           if (data.isBlocked === false) {
             document.getElementById('screen-blocked').classList.add('hidden');
-            if (!isFinished && document.getElementById('screen-quiz').classList.contains('hidden')) {
-              document.getElementById('screen-quiz').classList.remove('hidden');
+            if (!isFinished && document.getElementById('screen-quiz').style.display === 'none') {
+              document.getElementById('screen-quiz').style.display = 'block';
               if (!timerInterval) startTimer();
             }
           }
@@ -268,7 +268,7 @@
         
         document.getElementById('screen-join').classList.add('hidden');
         document.getElementById('screen-lobby').classList.add('hidden');
-        document.getElementById('screen-quiz').classList.add('hidden');
+        document.getElementById('screen-quiz').style.display = 'none';
         document.getElementById('screen-blocked').classList.add('hidden');
         document.getElementById('screen-score').classList.remove('hidden');
 
@@ -280,7 +280,7 @@
 
       if (quizData && quizData.mode === 'arcade' && data.status === 'active' && document.getElementById('screen-lobby').classList.contains('hidden') === false) {
         document.getElementById('screen-lobby').classList.add('hidden');
-        document.getElementById('screen-quiz').classList.remove('hidden');
+        document.getElementById('screen-quiz').style.display = 'block';
         startTimer();
         initExambro();
       }
@@ -290,7 +290,6 @@
     window.addEventListener('blur', async () => {
       if (isFinished || !studentDocId) return;
 
-      // Ambil data pelanggaran terbaru lalu tambahkan akumulasinya secara aman
       const docRef = db.collection("quizzes").doc(quizCode).collection("submissions").doc(studentDocId);
       const docSnap = await docRef.get();
       let currentCount = 0;
@@ -307,7 +306,7 @@
 
       document.getElementById('screen-join').classList.add('hidden');
       document.getElementById('screen-lobby').classList.add('hidden');
-      document.getElementById('screen-quiz').classList.add('hidden');
+      document.getElementById('screen-quiz').style.display = 'none';
       document.getElementById('screen-score').classList.add('hidden');
       document.getElementById('screen-blocked').classList.remove('hidden');
     });
@@ -344,15 +343,16 @@
       studentDocId = subRef.id;
 
       listenStudentStatus();
-      requestFullScreen(); // Aktifkan fullscreen pengaman layar
+      requestFullScreen();
 
       document.getElementById('screen-join').classList.add('hidden');
 
       if (quizData.mode === 'arcade' && quizData.status === 'waiting') {
         document.getElementById('screen-lobby').classList.remove('hidden');
+        document.getElementById('screen-quiz').style.display = 'none';
         listenLobbyChat();
       } else {
-        document.getElementById('screen-quiz').classList.remove('hidden');
+        document.getElementById('screen-quiz').style.display = 'block';
         startTimer();
         initExambro();
       }
@@ -576,7 +576,6 @@
         }
       });
 
-      // Ambil jumlah pelanggaran dari database untuk akumulasi penalti (misal: 3x pelanggaran = 30% dari skor murni)
       let totalPelanggaran = 0;
       if (studentDocId) {
         const docSnap = await db.collection("quizzes").doc(quizCode).collection("submissions").doc(studentDocId).get();
@@ -585,7 +584,6 @@
         }
       }
 
-      // AKUMULASI PENALTI: 10% per pelanggaran (Misal 3x = 30%)
       let persenPenalti = totalPelanggaran * 10;
       if (persenPenalti > 100) persenPenalti = 100;
 
@@ -605,7 +603,7 @@
         });
       }
 
-      document.getElementById('screen-quiz').classList.add('hidden');
+      document.getElementById('screen-quiz').style.display = 'none';
       document.getElementById('screen-blocked').classList.add('hidden');
       document.getElementById('screen-score').classList.remove('hidden');
       document.getElementById('final-score-value').innerText = finalScore;
@@ -620,4 +618,4 @@
     }
   </script>
 </body>
-</html>s
+</html>
