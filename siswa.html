@@ -187,7 +187,6 @@
     let timerInterval = null;
     let secondsElapsed = 0;
     let isFinished = false;
-    let hasBeenBlocked = false;
 
     if (!quizCode) {
       alert("Kode kuis tidak valid!");
@@ -234,8 +233,7 @@
         });
     }
 
-    // 2. FUNGSI PANTAU STATUS SISWA (Mendengar Kick, Unblock 1-Klik, atau Admin Hentikan Ujian)
-    // 2. FUNGSI PANTAU STATUS SISWA (Mendengar Kick, Unblock 1-Klik)
+    // 2. FUNGSI PANTAU STATUS SISWA (Mendengar Kick, Unblock 1-Klik, Fullscreen Enforcement)
     function listenStudentStatus() {
       if (!studentDocId) return;
       
@@ -249,13 +247,9 @@
 
           const data = doc.data();
 
-          // Jika admin menekan tombol Unblock (isBlocked diubah jadi false)
           if (data.isBlocked === false) {
-            // Sembunyikan layar blokir merah
             document.getElementById('screen-blocked').classList.add('hidden');
-            
-            // Kembalikan tampilan ke layar ujian jika belum selesai
-            if (!isFinished) {
+            if (!isFinished && document.getElementById('screen-quiz').classList.contains('hidden')) {
               document.getElementById('screen-quiz').classList.remove('hidden');
               if (!timerInterval) startTimer();
             }
@@ -292,16 +286,23 @@
       }
     });
 
-    // 1. Saat kecurangan terjadi (pindah tab), simpan statusnya ke database
-    // 1. Saat kecurangan terjadi (pindah tab), catat ke database dan kunci layar
+    // SISTEM KEAMANAN TEGAS & AKUMULASI PELANGGARAN + FULLSCREEN
     window.addEventListener('blur', async () => {
       if (isFinished || !studentDocId) return;
 
-      // Catat status pelanggaran ke Firestore tanpa mengubah isFinished agar skor tetap bisa dihitung
-      await db.collection("quizzes").doc(quizCode).collection("submissions").doc(studentDocId).update({
-        pernahTerblokir: true,
+      // Ambil data pelanggaran terbaru lalu tambahkan akumulasinya secara aman
+      const docRef = db.collection("quizzes").doc(quizCode).collection("submissions").doc(studentDocId);
+      const docSnap = await docRef.get();
+      let currentCount = 0;
+      if (docSnap.exists) {
+        currentCount = docSnap.data().jumlahPelanggaran || 0;
+      }
+      currentCount++;
+
+      await docRef.update({
+        jumlahPelanggaran: currentCount,
         isBlocked: true,
-        statusIndikator: "TERBLOKIR (Kecurangan ❌)"
+        statusIndikator: `TERBLOKIR (${currentCount}x Pelanggaran ❌)`
       });
 
       document.getElementById('screen-join').classList.add('hidden');
@@ -310,6 +311,20 @@
       document.getElementById('screen-score').classList.add('hidden');
       document.getElementById('screen-blocked').classList.remove('hidden');
     });
+
+    // Paksa Fullscreen saat ujian dimulai/berjalan
+    function requestFullScreen() {
+      const elem = document.documentElement;
+      if (elem.requestFullscreen) {
+        elem.requestFullscreen().catch(() => {});
+      } else if (elem.mozRequestFullScreen) {
+        elem.mozRequestFullScreen();
+      } else if (elem.webkitRequestFullscreen) {
+        elem.webkitRequestFullscreen();
+      } else if (elem.msRequestFullscreen) {
+        elem.msRequestFullscreen();
+      }
+    }
 
     async function joinQuiz() {
       const nameInput = document.getElementById('student-name-input').value.trim();
@@ -321,7 +336,6 @@
         soalKe: 1,
         durasiDetik: 0,
         status: "mengerjakan",
-        pernahTerblokir: false,
         jumlahPelanggaran: 0,
         statusIndikator: "Aman 🟢",
         isBlocked: false,
@@ -330,6 +344,7 @@
       studentDocId = subRef.id;
 
       listenStudentStatus();
+      requestFullScreen(); // Aktifkan fullscreen pengaman layar
 
       document.getElementById('screen-join').classList.add('hidden');
 
@@ -534,11 +549,8 @@
 
     async function submitQuiz() {
       if (isFinished) return;
-      // Konfirmasi alert dihapus, langsung proses pengiriman jawaban secara instan
-
       isFinished = true;
       if (timerInterval) clearInterval(timerInterval);
-
       hitungDanTampilkanSkorAkhir();
     }
 
@@ -564,17 +576,20 @@
         }
       });
 
-      // Ambil data terbaru dari Firestore untuk memastikan status pelanggaran terbaca
-      let kenaPenalti = false;
+      // Ambil jumlah pelanggaran dari database untuk akumulasi penalti (misal: 3x pelanggaran = 30% dari skor murni)
+      let totalPelanggaran = 0;
       if (studentDocId) {
         const docSnap = await db.collection("quizzes").doc(quizCode).collection("submissions").doc(studentDocId).get();
         if (docSnap.exists) {
-          kenaPenalti = docSnap.data().pernahTerblokir === true;
+          totalPelanggaran = docSnap.data().jumlahPelanggaran || 0;
         }
       }
 
-      // PENALTI 10% DARI TOTAL SKOR MURNI JIKA PERNAH CURANG/TERBLOKIR
-      let penaltyDeduction = kenaPenalti ? Math.round(rawScore * 0.10) : 0;
+      // AKUMULASI PENALTI: 10% per pelanggaran (Misal 3x = 30%)
+      let persenPenalti = totalPelanggaran * 10;
+      if (persenPenalti > 100) persenPenalti = 100;
+
+      let penaltyDeduction = Math.round(rawScore * (persenPenalti / 100));
       let finalScore = Math.round(rawScore) - penaltyDeduction;
       if (finalScore < 0) finalScore = 0;
 
@@ -586,7 +601,7 @@
           skor: finalScore,
           durasiDetik: secondsElapsed,
           jamSelesai: jamSelesaiStr,
-          statusIndikator: kenaPenalti ? "Selesai (Penalti 10%)" : "Selesai Bersih 🟢"
+          statusIndikator: totalPelanggaran > 0 ? `Selesai (Penalti ${persenPenalti}%)` : "Selesai Bersih 🟢"
         });
       }
 
@@ -595,9 +610,9 @@
       document.getElementById('screen-score').classList.remove('hidden');
       document.getElementById('final-score-value').innerText = finalScore;
 
-      if (kenaPenalti) {
+      if (totalPelanggaran > 0) {
         const penaltyEl = document.getElementById('penalty-info');
-        penaltyEl.innerText = `⚠️ Skor dipotong 10% (${penaltyDeduction} poin) karena terdeteksi kecurangan/pindah tab`;
+        penaltyEl.innerText = `⚠️ Skor dipotong ${persenPenalti}% (${penaltyDeduction} poin) dari ${totalPelanggaran}x pelanggaran/pindah tab`;
         penaltyEl.classList.remove('hidden');
       }
 
@@ -605,4 +620,4 @@
     }
   </script>
 </body>
-</html>
+</html>s
