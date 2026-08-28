@@ -18,7 +18,7 @@
     <!-- Logo webp diam tenang -->
     <img src="logo.webp" alt="Logo QuizIT" class="w-16 h-16 object-contain rounded-2xl shadow-md">
     
-    <!-- Teks SCHOLAR CORE dengan animasi naik turun per huruf & warna merah -->
+    <!-- Teks SCHOLAR CORE dengan animasi naik turun per huruf -->
     <div id="splash-title" class="font-black text-[#1e1b4b] tracking-widest text-lg md:text-xl flex space-x-1">
       <span class="inline-block animate-bounce" style="animation-delay: 0s;">S</span>
       <span class="inline-block animate-bounce" style="animation-delay: 0.1s;">C</span>
@@ -45,9 +45,7 @@
   <!-- ================= NAVBAR ATAS ================= -->
   <header class="w-full bg-white border-b border-gray-200 sticky top-0 z-50 px-6 py-3.5 flex justify-between items-center shadow-sm">
     <div class="flex items-center gap-2.5 cursor-pointer" onclick="location.reload()">
-      <!-- Ganti kotak merah 'IT' dengan file logo.webp dan atur ukurannya agar pas -->
       <img src="logo.webp" alt="Logo" class="w-9 h-9 object-contain rounded-xl shadow-md">
-      
       <span class="font-black tracking-tight text-xl text-[#1e1b4b]">
         Quiz<span class="text-red-600">IT</span> 
         <span class="text-[9px] text-orange-600 uppercase tracking-widest block -mt-1 font-extrabold">Scholar Core</span>
@@ -143,14 +141,13 @@
 
   </main>
 
-  <!-- FOOTER DENGAN RUANG NAFAS YANG PAS -->
+  <!-- FOOTER -->
   <footer class="w-full py-8 mt-auto text-center text-xs text-gray-400 border-t border-gray-100 font-medium">
-    V1.1.a &copy; 2026 QuizIT Scholar Core &bull; Dibuat oleh orang gabut.
+    V1.1 &copy; 2026 QuizIT Scholar Core &bull; Dibuat oleh orang gabut.
   </footer>
 
   <script>
-
-window.addEventListener("DOMContentLoaded", () => {
+    window.addEventListener("DOMContentLoaded", () => {
       const splash = document.getElementById("splash-screen");
       const bar = document.getElementById("loading-bar");
 
@@ -159,7 +156,7 @@ window.addEventListener("DOMContentLoaded", () => {
       }, 100);
 
       setTimeout(() => {
-        splash.style.opacity = "0"; // Fade out
+        splash.style.opacity = "0";
       }, 2800);
 
       setTimeout(() => {
@@ -180,13 +177,14 @@ window.addEventListener("DOMContentLoaded", () => {
       }
     });
 
+    // Diarahkan ke lobby.html agar masuk ruang tunggu dulu (mencegah kebocoran soal)
     function mulaiDenganKode() {
       const kode = document.getElementById('input-kode-utama').value.trim().toUpperCase();
       if (!kode || kode.length < 5) {
         alert("Masukkan kode kuis 5 huruf dengan benar!");
         return;
       }
-      window.location.href = `siswa.html?kode=${kode}`;
+      window.location.href = `lobby.html?kode=${kode}`;
     }
 
     function bukaDariLinkNav() {
@@ -194,7 +192,7 @@ window.addEventListener("DOMContentLoaded", () => {
       if (!val) return alert("Masukkan link atau kode terlebih dahulu!");
       
       if (val.length === 5) {
-        window.location.href = `siswa.html?kode=${val.toUpperCase()}`;
+        window.location.href = `lobby.html?kode=${val.toUpperCase()}`;
         return;
       }
 
@@ -202,12 +200,12 @@ window.addEventListener("DOMContentLoaded", () => {
         const url = new URL(val);
         const kodeParam = url.searchParams.get('kode');
         if (kodeParam) {
-          window.location.href = `siswa.html?kode=${kodeParam.toUpperCase()}`;
+          window.location.href = `lobby.html?kode=${kodeParam.toUpperCase()}`;
         } else {
           window.location.href = val;
         }
       } catch (err) {
-        window.location.href = `siswa.html?kode=${val.toUpperCase()}`;
+        window.location.href = `lobby.html?kode=${val.toUpperCase()}`;
       }
     }
   </script>
