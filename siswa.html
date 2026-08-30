@@ -49,6 +49,7 @@
         <div class="flex justify-between items-center pt-4 border-t border-gray-100 mt-6 gap-2">
           <button onclick="prevQuestion()" id="btn-prev" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-xl text-xs font-bold transition">← Sebelumnya</button>
           <button onclick="toggleRaguRagu()" id="btn-ragu" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-xl text-xs font-extrabold transition shadow">⭐ Ragu-ragu</button>
+          <!-- Tombol Berikutnya / Kumpulkan Dinamis -->
           <button onclick="nextQuestion()" id="btn-next" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-xs font-extrabold transition shadow">Selanjutnya ➔</button>
         </div>
       </div>
@@ -108,17 +109,37 @@
     </button>
   </div>
 
-  <!-- ================= LAYAR 5: AKUN TERKUNCI / TERBLOKIR ================= -->
-  <div id="screen-blocked" class="hidden max-w-md w-full bg-white p-8 rounded-2xl border border-red-200 shadow-xl text-center space-y-6">
-    <div class="w-16 h-16 bg-red-600 rounded-2xl mx-auto flex items-center justify-center text-3xl shadow-md text-white font-bold">🚫</div>
-    <div>
-      <h2 class="text-2xl font-black text-red-600">OOWWWWW!</h2>
-      <p class="text-xs text-gray-500 mt-1 font-medium">Sistem mendeteksi adanya perilaku anomali (pindah tab atau keluar dari halaman ujian).</p>
-    </div>
-    
-    <div class="bg-red-50 p-4 rounded-xl border border-red-200">
-      <span class="text-xs text-red-600 font-bold block">Status Akses:</span>
-      <span class="text-lg font-black text-red-700">Pengerjaan terkunci seketika, silahkan melapor pada Pengawas untuk verifikasi!</span>
+  <!-- ================= LAYAR 5: AKUN TERKUNCI / TERBLOKIR (VERSI 1.3 ULTRA PREMIUM) ================= -->
+  <div id="screen-blocked" class="hidden fixed inset-0 bg-gray-950/95 backdrop-blur-md z-[999] flex items-center justify-center p-4">
+    <div class="max-w-md w-full bg-gray-900 border border-red-500/40 p-8 rounded-3xl shadow-[0_0_50px_rgba(239,68,68,0.2)] text-center space-y-6 relative overflow-hidden">
+      
+      <!-- Efek Garis Cahaya Merah di Atas Card -->
+      <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent"></div>
+
+      <div class="w-20 h-20 bg-red-500/10 border border-red-500/30 rounded-2xl mx-auto flex items-center justify-center text-4xl shadow-inner animate-pulse">
+        🔒
+      </div>
+
+      <div class="space-y-2">
+        <span class="bg-red-500/20 text-red-400 border border-red-500/30 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-widest">Sistem Keamanan Aktif</span>
+        <h2 class="text-3xl font-black text-white tracking-tight">AKSES DIKUNCI!</h2>
+        <p class="text-xs text-gray-400 leading-relaxed px-4">
+          Sistem mendeteksi adanya aktivitas mencurigakan atau perpindahan tab/keluar aplikasi dari perangkatmu.
+        </p>
+      </div>
+      
+      <div class="bg-red-950/40 border border-red-900/50 p-4 rounded-2xl text-left space-y-1">
+        <div class="flex items-center gap-2 text-[11px] font-bold text-red-400 uppercase tracking-wider">
+          <span>⚠️</span> Status Pengerjaan:
+        </div>
+        <p class="text-xs text-red-200 font-medium leading-relaxed">
+          Ujianmu ditahan seketika. Harap segera melapor kepada Pengawas atau Guru penjaga ruang ujian untuk verifikasi data!
+        </p>
+      </div>
+
+      <div class="text-[10px] text-gray-500 font-mono">
+        QuizIT Scholar Core &bull; Secure Exambro Engine
+      </div>
     </div>
   </div>
 
@@ -308,6 +329,18 @@
         imgContainer.classList.add('hidden');
       }
 
+      // PERMINTAAN V1.3: Tombol "Selanjutnya" berubah jadi "Kumpulkan" di soal terakhir
+      const btnNext = document.getElementById('btn-next');
+      if (currentQuestionIndex === quizData.soal.length - 1) {
+        btnNext.innerText = "Kumpulkan 🏁";
+        btnNext.className = "bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-xl text-xs font-extrabold transition shadow";
+        btnNext.setAttribute("onclick", "submitQuiz()");
+      } else {
+        btnNext.innerText = "Selanjutnya ➔";
+        btnNext.className = "bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-xs font-extrabold transition shadow";
+        btnNext.setAttribute("onclick", "nextQuestion()");
+      }
+
       const optArea = document.getElementById('options-container');
       optArea.innerHTML = '';
       const opsiList = q.opsi && q.opsi.length > 0 ? q.opsi : ["Pilihan A", "Pilihan B", "Pilihan C", "Pilihan D", "Pilihan E"];
@@ -378,15 +411,29 @@
     async function hitungDanTampilkanSkorAkhir() {
       let rawScore = 0;
       const totalSoal = quizData.soal.length;
-      const bobot = 100 / totalSoal;
 
       quizData.soal.forEach((q, idx) => {
         const studentAns = studentAnswers[idx];
-        if (studentAns !== undefined) {
-          if (q.tipe === 'pg' && studentAns === q.kunci) rawScore += bobot;
-          else if (q.tipe === 'pgk' && JSON.stringify(studentAns) === JSON.stringify(q.kunci)) rawScore += bobot;
-          else if (q.tipe === 'bs' && studentAns === q.kunci) rawScore += bobot;
-          else if (q.tipe === 'uraian' && String(studentAns).trim().toLowerCase() === String(q.kunci).trim().toLowerCase()) rawScore += bobot;
+        // Ambil bobot soal: jika ada q.bobot dari admin (auto-match / manual), gunakan itu. Jika tidak ada, pakai pembagian rata standar.
+        const bobot = q.bobot !== undefined ? q.bobot : (100 / totalSoal);
+
+        if (studentAns !== undefined && studentAns !== "") {
+          if (q.tipe === 'pg' && studentAns === q.kunci) {
+            rawScore += bobot;
+          } else if (q.tipe === 'pgk' && JSON.stringify(studentAns) === JSON.stringify(q.kunci)) {
+            rawScore += bobot;
+          } else if (q.tipe === 'bs' && studentAns === q.kunci) {
+            rawScore += bobot;
+          } else if (q.tipe === 'uraian') {
+            // Logika Uraian Sistem Kata Kunci (Keyword):
+            // Admin bisa memisahkan beberapa alternatif kata kunci dengan koma (misal: "fotosintesis, matahari")
+            const studentAnsClean = String(studentAns).trim().toLowerCase();
+            const allowedKeywords = String(q.kunci).toLowerCase().split(',').map(k => k.trim());
+            const isMatch = allowedKeywords.some(keyword => keyword !== "" && studentAnsClean.includes(keyword));
+            if (isMatch) {
+              rawScore += bobot;
+            }
+          }
         }
       });
 
