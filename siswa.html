@@ -13,55 +13,15 @@
 </head>
 <body class="bg-gray-100 text-gray-800 min-h-screen flex flex-col items-center justify-center p-3 md:p-6 font-sans select-none">
 
-  <!-- ================= POP-UP KONFIRMASI & FULLSCREEN LAUNCHER ================= -->
-  <div id="modal-fullscreen-launcher" class="fixed inset-0 bg-gray-950/95 backdrop-blur-md z-[1000] flex items-center justify-center p-4">
-    <div class="max-w-md w-full bg-gray-900 border border-blue-500/40 p-8 rounded-3xl shadow-[0_0_50px_rgba(59,130,246,0.2)] text-center space-y-6 relative overflow-hidden">
-      
-      <!-- Garis Cahaya Dekoratif -->
-      <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent"></div>
-
-      <div class="w-20 h-20 bg-blue-500/10 border border-blue-500/30 rounded-2xl mx-auto flex items-center justify-center text-4xl shadow-inner">
-        🛡️
-      </div>
-
-      <div class="space-y-2">
-        <span class="bg-blue-500/20 text-blue-400 border border-blue-500/30 text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-widest">Sistem Exambro Ready</span>
-        <h2 class="text-2xl font-black text-white tracking-tight">Konfirmasi Memulai Ujian</h2>
-        <p class="text-xs text-gray-400 leading-relaxed px-2">
-          Sebelum lembar soal terbuka dan layar beralih ke mode <strong class="text-blue-400">Full Screen (Layar Penuh)</strong>, pastikan posisi HP-mu sudah nyaman, koneksi stabil, dan siap mengerjakan dengan jujur.
-        </p>
-      </div>
-      
-      <div class="bg-blue-950/40 border border-blue-900/50 p-4 rounded-2xl text-left space-y-1">
-        <div class="flex items-center gap-2 text-[11px] font-bold text-blue-400 uppercase tracking-wider">
-          <span>💡</span> Perhatian:
-        </div>
-        <p class="text-xs text-blue-200/80 font-medium leading-relaxed">
-          Menekan tombol di bawah akan mengunci layar secara penuh demi menjaga integritas ujian dan mencegah salah deteksi tab.
-        </p>
-      </div>
-
-      <button onclick="startExamWithFullscreen()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-extrabold text-xs uppercase tracking-wider transition shadow-lg shadow-blue-600/30 cursor-pointer">
-        Saya Siap, Mulai Ujian Sekarang 🚀
-      </button>
-
-      <div class="text-[10px] text-gray-500 font-mono">
-        QuizIT Scholar Core &bull; SMA Negeri 1 Nganjuk
-      </div>
-    </div>
-  </div>
-
-  <!-- ================= LAYAR 3: UTAMA EXAMBRO ================= -->
-  <div id="screen-quiz" class="hidden max-w-4xl w-full space-y-4">
+  <!-- ================= LAYAR UTAMA EXAMBRO ================= -->
+  <div id="screen-quiz" class="max-w-4xl w-full space-y-4">
     
     <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row justify-between items-center gap-3">
       <div>
         <h2 id="exambro-quiz-title" class="text-sm font-black text-[#1e1b4b]">Judul Ujian</h2>
-        <span class="text-[11px] text-gray-500">SMA Negeri 1 Nganjuk &bull; Sistem Exambro Core</span>
+        <span class="text-[11px] text-gray-500">QuizIT Scholar &bull; Sistem Exambro Core</span>
       </div>
-      <div class="bg-orange-50 px-4 py-2 rounded-xl border border-orange-200 font-mono text-orange-600 font-extrabold text-sm flex items-center gap-2">
-        <span>⏱️ Waktu Berlalu:</span> <span id="timer-display">00:00</span>
-      </div>
+      <!-- Tampilan sisa waktu sudah dihilangkan sesuai permintaan -->
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -116,7 +76,7 @@
     </div>
   </div>
 
-  <!-- ================= LAYAR 4: SKOR AKHIR / SELESAI & LEADERBOARD ================= -->
+  <!-- ================= LAYAR SKOR AKHIR / SELESAI & LEADERBOARD ================= -->
   <div id="screen-score" class="hidden max-w-md w-full bg-white p-8 rounded-2xl border border-gray-200 shadow-xl text-center space-y-6">
     <div class="w-16 h-16 bg-green-600 rounded-2xl mx-auto flex items-center justify-center text-3xl shadow-md text-white font-bold">🏆</div>
     <div>
@@ -147,11 +107,10 @@
     </button>
   </div>
 
-  <!-- ================= LAYAR 5: AKUN TERKUNCI / TERBLOKIR (VERSI 1.3 ULTRA PREMIUM) ================= -->
+  <!-- ================= LAYAR AKUN TERKUNCI / TERBLOKIR ================= -->
   <div id="screen-blocked" class="hidden fixed inset-0 bg-gray-950/95 backdrop-blur-md z-[999] flex items-center justify-center p-4">
     <div class="max-w-md w-full bg-gray-900 border border-red-500/40 p-8 rounded-3xl shadow-[0_0_50px_rgba(239,68,68,0.2)] text-center space-y-6 relative overflow-hidden">
       
-      <!-- Efek Garis Cahaya Merah di Atas Card -->
       <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-red-500 to-transparent"></div>
 
       <div class="w-20 h-20 bg-red-500/10 border border-red-500/30 rounded-2xl mx-auto flex items-center justify-center text-4xl shadow-inner animate-pulse">
@@ -203,7 +162,6 @@
     let currentQuestionIndex = 0;
     let studentAnswers = {};
     let flaggedQuestions = {};
-    let timerInterval = null;
     let secondsElapsed = 0;
     let isFinished = false;
 
@@ -218,30 +176,9 @@
         location.href = 'index.html';
       }
       quizData = doc.data();
-      // Jangan langsung fullscreen otomatis, tunggu interaksi klik user pada pop-up modal launcher
-    });
-
-    // Fungsi yang dipicu saat siswa menekan tombol "Saya Siap, Mulai Ujian Sekarang"
-    function startExamWithFullscreen() {
-      // Sembunyikan modal launcher
-      document.getElementById('modal-fullscreen-launcher').classList.add('hidden');
-      // Tampilkan kontainer utama soal
-      document.getElementById('screen-quiz').classList.remove('hidden');
-
-      // Picu permintaan fullscreen langsung dari interaksi klik user yang sah
-      const elem = document.documentElement;
-      if (elem.requestFullscreen) {
-        elem.requestFullscreen().catch(err => console.log("Fullscreen dibatasi browser:", err));
-      } else if (elem.webkitRequestFullscreen) {
-        elem.webkitRequestFullscreen();
-      } else if (elem.msRequestFullscreen) {
-        elem.msRequestFullscreen();
-      }
-
-      // Mulai timer dan inisialisasi kuis
-      startTimer();
+      startDurationTracker();
       initExambro();
-    }
+    });
 
     function fetchLeaderboard() {
       db.collection("quizzes").doc(quizCode).collection("submissions")
@@ -283,7 +220,6 @@
           document.getElementById('screen-blocked').classList.add('hidden');
           if (!isFinished) {
             document.getElementById('screen-quiz').classList.remove('hidden');
-            if (!timerInterval) startTimer();
           }
         }
       });
@@ -294,9 +230,7 @@
       const data = doc.data();
       if (data.status === "ended" && !isFinished) {
         isFinished = true;
-        if (timerInterval) clearInterval(timerInterval);
         document.getElementById('screen-quiz').classList.add('hidden');
-        document.getElementById('modal-fullscreen-launcher').classList.add('hidden');
         document.getElementById('screen-blocked').classList.add('hidden');
         document.getElementById('screen-score').classList.remove('hidden');
         document.getElementById('score-title-text').innerText = "Ujian Dihentikan Admin";
@@ -308,8 +242,6 @@
     // Sistem keamanan ketat: Deteksi pindah tab / blur
     window.addEventListener('blur', async () => {
       if (isFinished || !studentDocId) return;
-      // Jangan trigger blokir jika modal konfirmasi awal belum ditutup
-      if (!document.getElementById('modal-fullscreen-launcher').classList.contains('hidden')) return;
 
       const docRef = db.collection("quizzes").doc(quizCode).collection("submissions").doc(studentDocId);
       const docSnap = await docRef.get();
@@ -327,16 +259,15 @@
       document.getElementById('screen-blocked').classList.remove('hidden');
     });
 
-    function startTimer() {
-      timerInterval = setInterval(() => {
-        secondsElapsed++;
-        const mins = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
-        const secs = String(secondsElapsed % 60).padStart(2, '0');
-        document.getElementById('timer-display').innerText = `${mins}:${secs}`;
-        db.collection("quizzes").doc(quizCode).collection("submissions").doc(studentDocId).update({
-          durasiDetik: secondsElapsed,
-          soalKe: currentQuestionIndex + 1
-        });
+    function startDurationTracker() {
+      setInterval(() => {
+        if (!isFinished) {
+          secondsElapsed++;
+          db.collection("quizzes").doc(quizCode).collection("submissions").doc(studentDocId).update({
+            durasiDetik: secondsElapsed,
+            soalKe: currentQuestionIndex + 1
+          });
+        }
       }, 1000);
     }
 
@@ -458,7 +389,6 @@
     async function submitQuiz() {
       if (isFinished) return;
       isFinished = true;
-      if (timerInterval) clearInterval(timerInterval);
       hitungDanTampilkanSkorAkhir();
     }
 
@@ -509,7 +439,6 @@
       });
 
       document.getElementById('screen-quiz').classList.add('hidden');
-      document.getElementById('modal-fullscreen-launcher').classList.add('hidden');
       document.getElementById('screen-blocked').classList.add('hidden');
       document.getElementById('screen-score').classList.remove('hidden');
       document.getElementById('final-score-value').innerText = finalScore;
