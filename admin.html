@@ -6,7 +6,6 @@
   <title>QuizIT Scholar Core - Admin Panel & Creator</title>
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- Firebase SDK Compat -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
@@ -29,7 +28,6 @@
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen p-4 select-none flex items-center justify-center">
 
-  <!-- ================= MODAL LOGIN ADMIN ================= -->
   <div id="admin-login-screen" class="fixed inset-0 bg-gray-950 flex items-center justify-center p-4 z-50">
     <div class="bg-gray-800 p-8 rounded-2xl max-w-sm w-full border border-gray-700 shadow-2xl text-center space-y-4">
       <div class="w-12 h-12 bg-red-600 rounded-xl mx-auto flex items-center justify-center font-black text-white text-lg shadow-md">🔒</div>
@@ -43,10 +41,8 @@
     </div>
   </div>
 
-  <!-- ================= KONTEN UTAMA ADMIN ================= -->
   <div id="admin-main-content" class="hidden max-w-5xl w-full mx-auto my-6 bg-gray-800 p-4 md:p-8 rounded-2xl shadow-2xl border border-gray-700">
     
-    <!-- HEADER & NAVIGASI TAB ADMIN -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b border-gray-700 pb-4 gap-4">
       <div class="flex justify-between items-center w-full md:w-auto">
         <div>
@@ -70,7 +66,6 @@
       </div>
     </div>
 
-    <!-- ================= TAB 1: CREATOR ================= -->
     <div id="view-creator" class="space-y-6">
       <div class="bg-gray-900 p-4 md:p-5 rounded-xl border border-gray-700 space-y-4">
         <div>
@@ -97,9 +92,19 @@
             </label>
           </div>
         </div>
+
+        <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 flex items-center justify-between">
+          <div>
+            <span class="text-xs font-black text-white block">Fitur Auto Match Bobot Nilai</span>
+            <span class="text-[10px] text-gray-400">Jika aktif, poin soal dibagi rata otomatis (Total 100). Jika mati, atur bobot manual per soal.</span>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="toggle-automatch" checked onchange="toggleAutoMatchMode()" class="sr-only peer">
+            <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+          </label>
+        </div>
       </div>
 
-      <!-- Container Soal -->
       <div id="questions-container" class="space-y-6"></div>
 
       <div class="flex flex-col sm:flex-row gap-4 border-t border-gray-700 pt-6">
@@ -108,7 +113,6 @@
       </div>
     </div>
 
-    <!-- ================= TAB 2: MONITOR & LOBBY ================= -->
     <div id="view-monitor" class="hidden space-y-6">
       <div class="bg-gray-900 p-4 rounded-xl border border-gray-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -161,7 +165,6 @@
       </div>
     </div>
 
-    <!-- ================= TAB 3: RIWAYAT KUIS ================= -->
     <div id="view-history" class="hidden space-y-6">
       <div>
         <h2 class="text-lg font-bold text-green-400 mb-3">📚 Daftar Kuis Tersimpan</h2>
@@ -198,7 +201,6 @@
       </div>
     </div>
 
-    <!-- MODAL -->
     <div id="modal-code" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
       <div class="bg-gray-800 p-8 rounded-2xl max-w-md w-full border border-gray-700 text-center space-y-4">
         <div id="modal-content-arcade" class="hidden">
@@ -275,9 +277,23 @@
       if (tab === 'history') loadHistoryList();
     }
 
+    // Fungsi Toggle Auto Match untuk menampilkan/menyembunyikan input bobot manual
+    function toggleAutoMatchMode() {
+      const isAutoMatch = document.getElementById('toggle-automatch').checked;
+      const weightContainers = document.querySelectorAll('.question-weight-container');
+      weightContainers.forEach(container => {
+        if (isAutoMatch) {
+          container.classList.add('hidden');
+        } else {
+          container.classList.remove('hidden');
+        }
+      });
+    }
+
     function addQuestionCard(afterCardId = null, existingData = null) {
       const container = document.getElementById('questions-container');
       const uniqueId = 'q_' + Math.random().toString(36).substr(2, 9);
+      const isAutoMatch = document.getElementById('toggle-automatch').checked;
       
       const qCard = document.createElement('div');
       qCard.className = "question-card bg-gray-900 p-4 md:p-5 rounded-2xl border border-gray-700 space-y-4 relative shadow-lg";
@@ -286,6 +302,7 @@
       const qText = existingData ? existingData.pertanyaan : '';
       const qImg = existingData ? (existingData.gambar || '') : '';
       const qType = existingData ? existingData.tipe : 'pg';
+      const qBobot = existingData ? (existingData.bobot || 0) : '';
 
       qCard.innerHTML = `
         <div class="flex justify-between items-center border-b border-gray-800 pb-3 gap-2">
@@ -305,6 +322,12 @@
             </button>
           </div>
         </div>
+
+        <div class="question-weight-container ${isAutoMatch ? 'hidden' : ''} bg-gray-800/80 p-2.5 rounded-xl border border-gray-700 flex items-center justify-between">
+          <span class="text-xs font-bold text-yellow-400">⚖️ Bobot Nilai Soal Ini:</span>
+          <input type="number" min="0" max="100" value="${qBobot}" placeholder="Poin..." class="q-weight-input w-24 p-1.5 bg-gray-900 border border-gray-600 rounded-lg text-xs text-white font-mono font-bold text-center focus:outline-none">
+        </div>
+
         <textarea rows="2" placeholder="Tuliskan pertanyaan soal..." class="q-text-input w-full p-3 bg-gray-800 border border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">${qText}</textarea>
         <div>
           <input type="text" placeholder="🔗 Link Gambar Soal (Opsional)" value="${qImg}" class="q-image-input w-full p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-xs text-blue-300 focus:outline-none">
@@ -371,7 +394,25 @@
     async function saveAndGenerateQuiz() {
       const title = document.getElementById('quiz-title').value.trim();
       const mode = document.querySelector('input[name="quiz-mode"]:checked').value;
+      const isAutoMatch = document.getElementById('toggle-automatch').checked;
       if (!title) return alert("Isikan Judul Kuis!");
+
+      const cards = document.querySelectorAll('.question-card');
+      if (cards.length === 0) return alert("Minimal 1 soal!");
+
+      // Validasi Bobot Manual jika Auto Match dimatikan (OFF)
+      if (!isAutoMatch) {
+        let totalBobot = 0;
+        cards.forEach(card => {
+          const bobotVal = parseFloat(card.querySelector('.q-weight-input')?.value) || 0;
+          totalBobot += bobotVal;
+        });
+
+        if (totalBobot !== 100) {
+          alert(`⚠️ Kejanggalan Beban Nilai! Total bobot seluruh soal saat ini adalah ${totalBobot} poin.\n\nBatas maksimal dan wajib total bobot kuis adalah tepat 100 poin.`);
+          return;
+        }
+      }
 
       let code = currentSelectedQuizCode;
       if (!code) {
@@ -383,16 +424,16 @@
       currentCreatedCode = code;
       currentCreatedMode = mode;
       const questionsData = [];
-      
-      const cards = document.querySelectorAll('.question-card');
-      if (cards.length === 0) return alert("Minimal 1 soal!");
 
-      cards.forEach((card) => {
+      cards.forEach((card, index) => {
         const qText = card.querySelector('.q-text-input').value.trim();
         const imgUrl = card.querySelector('.q-image-input').value.trim();
         const type = card.querySelector('.q-type-select').value;
         const uid = card.getAttribute('data-id');
         let opts = [], key = null;
+
+        // Tentukan bobot soal: jika auto-match aktif, dibagi rata (100 / jumlah soal). Jika mati, ambil dari input manual.
+        let bobotSoal = isAutoMatch ? (100 / cards.length) : (parseFloat(card.querySelector('.q-weight-input')?.value) || 0);
 
         if (type === 'pg') { 
           opts = [0,1,2,3,4].map(i => card.querySelector(`#opt-${uid}-${i}`)?.value || ""); 
@@ -400,7 +441,7 @@
         }
         else if (type === 'pgk') { 
           opts = [0,1,2,3,4].map(i => card.querySelector(`#opt-${uid}-${i}`)?.value || ""); 
-          key = [0,1,2,3,4].map(i => card.querySelector(`#key-pgk-${uid}-${i}`)?.checked || false); 
+          key = [0,1,2,3,4].map(i => card.querySelector(`input[id^="key-pgk-${uid}-${i}"]`)?.checked || false); 
         }
         else if (type === 'bs') { 
           key = card.querySelector(`input[name="key-${uid}"]:checked`)?.value || "Benar"; 
@@ -408,7 +449,7 @@
         else if (type === 'uraian') { 
           key = card.querySelector(`.uraian-input`)?.value.trim() || ""; 
         }
-        questionsData.push({ pertanyaan: qText, gambar: imgUrl, tipe: type, opsi: opts, kunci: key });
+        questionsData.push({ pertanyaan: qText, gambar: imgUrl, tipe: type, opsi: opts, kunci: key, bobot: bobotSoal });
       });
 
       if (currentSelectedQuizCode) {
@@ -433,7 +474,7 @@
         document.getElementById('display-code-arcade').innerText = code;
         document.getElementById('modal-content-arcade').classList.remove('hidden');
       } else {
-        const link = `${window.location.origin}/siswa.html?kode=${code}`;
+        const link = `${window.location.origin}/lobby.html?kode=${code}`;
         document.getElementById('display-link-penugasan').value = link;
         document.getElementById('modal-content-penugasan').classList.remove('hidden');
       }
