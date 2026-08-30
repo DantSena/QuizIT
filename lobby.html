@@ -13,20 +13,6 @@
 </head>
 <body class="bg-gray-100 text-gray-800 min-h-screen flex items-center justify-center p-3 md:p-6 font-sans select-none">
 
-  <!-- ================= POP-UP INSTRUKSI MODE HENING (DO NOT DISTURB) ================= -->
-  <div id="modal-dnd" class="fixed inset-0 bg-black/70 z-[999] flex items-center justify-center p-4">
-    <div class="bg-white max-w-sm w-full p-6 rounded-2xl shadow-2xl text-center space-y-4">
-      <div class="w-14 h-14 bg-orange-100 text-orange-600 rounded-2xl mx-auto flex items-center justify-center text-3xl">🔕</div>
-      <h3 class="text-lg font-black text-[#1e1b4b]">Aktifkan Mode Hening / DND</h3>
-      <p class="text-xs text-gray-500 leading-relaxed">
-        Demi kelancaran ujian dan menghindari notifikasi luar yang dapat memicu sistem keamanan mendeteksi keluar aplikasi (yang bisa membuat akunmu terblokir), mohon aktifkan mode **Jangan Ganggu (Do Not Disturb)** atau silent di HP mu sekarang!
-      </p>
-      <button onclick="closeDndModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-extrabold text-xs uppercase tracking-wider transition shadow-lg">
-        Saya Sudah Mengaktifkannya 👍
-      </button>
-    </div>
-  </div>
-
   <!-- ================= LAYAR 1: MASUKKAN NAMA ================= -->
   <div id="screen-join" class="max-w-md w-full bg-white p-8 rounded-2xl border border-gray-200 shadow-xl text-center space-y-6">
     <div class="w-14 h-14 bg-blue-600 rounded-2xl mx-auto flex items-center justify-center text-2xl shadow-md text-white font-bold">🎓</div>
@@ -42,7 +28,7 @@
       </div>
     </div>
 
-    <button onclick="joinQuiz()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-extrabold transition shadow-lg text-sm">Masuk Ruang Tunggu ➔</button>
+    <button onclick="joinQuiz()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-extrabold transition shadow-lg text-sm cursor-pointer">Masuk Ruang Tunggu ➔</button>
     <a href="index.html" class="block text-xs text-gray-400 hover:text-gray-600 pt-2 font-medium">← Kembali ke Beranda</a>
   </div>
 
@@ -59,7 +45,7 @@
       <div id="lobby-chat-box" class="flex-1 p-3 overflow-y-auto space-y-2 flex flex-col text-xs"></div>
       <div class="p-2 border-t border-gray-200 flex gap-2">
         <input type="text" id="lobby-chat-input" placeholder="Ketik pesan..." class="flex-1 bg-white border border-gray-300 rounded-lg p-2 text-xs text-gray-800 focus:outline-none">
-        <button onclick="sendLobbyMessage()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs">Kirim</button>
+        <button onclick="sendLobbyMessage()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs cursor-pointer">Kirim</button>
       </div>
     </div>
   </div>
@@ -97,17 +83,6 @@
       quizData = doc.data();
       document.getElementById('join-quiz-title').innerText = `${quizData.namaQuiz} (${quizData.mode.toUpperCase()})`;
     });
-
-    // Fungsi untuk menutup pop-up DND sekaligus memicu Fullscreen yang aman dari interaksi user
-    function closeDndModal() {
-      document.getElementById('modal-dnd').style.display = 'none';
-      const elem = document.documentElement;
-      if (elem.requestFullscreen) {
-        elem.requestFullscreen().catch(err => console.log("Fullscreen dibatasi browser:", err));
-      } else if (elem.webkitRequestFullscreen) {
-        elem.webkitRequestFullscreen();
-      }
-    }
 
     async function joinQuiz() {
       const nameInput = document.getElementById('student-name-input').value.trim();
